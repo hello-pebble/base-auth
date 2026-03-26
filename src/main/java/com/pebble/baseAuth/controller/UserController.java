@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -27,6 +28,12 @@ public class UserController {
     public ResponseEntity<UserResponse> signUp(@RequestBody UserSignUpRequest request) {
         UserResponse response = UserResponse.from(userService.signUp(request.username(), request.password()));
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @GetMapping("/api/v1/users/admin/check")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> adminOnly() {
+        return ResponseEntity.ok("관리자 인증 성공! 당신은 시스템 관리자입니다.");
     }
 
     @PostMapping("/api/v1/login")

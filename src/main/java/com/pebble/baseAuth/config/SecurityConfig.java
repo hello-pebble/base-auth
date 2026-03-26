@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
@@ -18,6 +19,12 @@ import org.springframework.security.web.context.SecurityContextRepository;
 
 @Configuration
 @RequiredArgsConstructor
+/**
+ * [권한 시스템 도입 - Step 3]
+ * @EnableMethodSecurity: 메서드 레벨에서 권한을 체크할 수 있게 합니다. (예: @PreAuthorize)
+ * 이전의 @EnableGlobalMethodSecurity 대신 최신 Spring Security에서는 이 어노테이션을 사용합니다.
+ */
+@EnableMethodSecurity
 public class SecurityConfig {
 
     private final CustomAuthenticationHandler authenticationHandler;

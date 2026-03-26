@@ -21,7 +21,7 @@ public class UserService {
 
         String encodedPassword = passwordEncoder.encode(password);
 
-        return userRepository.save(new User(username, encodedPassword));
+        return userRepository.save(new User(username, encodedPassword, UserRole.ROLE_USER));
     }
 
     public User findByUsername(String username) {
