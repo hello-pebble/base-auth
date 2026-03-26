@@ -25,17 +25,7 @@ Create a standalone authentication service (`base-auth`) by stripping down the e
 - Remove `follows`, `follow_counts` tables.
 - Keep `users` table.
 
-### 2.4. Java Code Removal
-Delete the following packages and files:
-- **Controllers:** `FollowController`, `LikeController`, `MediaController`, `PostController`, `ProfileController`, `QuoteController`, `ReplyController`, `RepostController`, `TimelineController`.
-- **Services:** `FollowService`, `LikeService`, `MediaService`, `PostService`, `ProfileService`, `QuoteService`, `ReplyService`, `RepostService`, `TimelineService`, `StorageService`.
-- **Repositories:** Associated repositories.
-- **DTOs:** All except `LoginRequest`, `UserSignUpRequest`, `UserResponse`.
-- **Config:** `S3Config`, `StorageConfig`, `PostViewConfig`, `TimelineConfig`, `SchedulingConfig`.
-- **Scheduler:** `PostViewScheduler`.
-- **Domain Entities:** All except `User`, `BaseEntity`, `UserException`, `DomainException`.
-
-### 2.5. Java Code Refactoring
+### 2.4. Java Code Refactoring
 - **`UserService.java`**: Remove `profileService` dependency. The `signUp` method currently initializes a profile; this logic must be removed.
 - **`UserController.java`**: Remove `findAll` endpoint. Keep `signup`, `login`, and `me` (for session verification).
 - **`UserResponse.java`**: Verify it only contains user basics (id, username).
