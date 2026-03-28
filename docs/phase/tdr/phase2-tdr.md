@@ -1,58 +1,94 @@
 
 ## 📝 Technical Decision Record (TDR)
 
-### phase1
-### [Decision 1] Redis 기반 분산 세션(Session) 방식 채택 이유
-* **Context**: 과거 제한된 서버 자원 환경에서 운영 중, 동시 접속자가 증가함에 따라 DB 커넥션 풀(Connection Pool) 고갈로 인해 전체 서비스가 응답 불능 상태에 빠지는 장애를 경험했습니다.
-* **Analysis**: 분석 결과, 매 요청마다 발생하는 세션 검증(Session Look-up)이 비즈니스 쿼리와 동일한 DB 커넥션을 공유하면서 발생한 병목이었습니다.
-* **Rationale**:
-  자원 효율화: 빈번한 인증 확인 로직을 메모리 기반의 Redis로 이관하여, PostgreSQL의 커넥션 자원을 핵심 비즈니스 로직(CRUD) 처리에 집중시켰습니다.
-  독립성 확보: 인증 저장소를 분리함으로써, 설령 비즈니스 DB에 과부하가 걸리더라도 최소한의 인증 서비스는 정상 동작할 수 있는 구조를 지향했습니다.
-  확장성(Scale-out): 세션 정보를 중앙화하여 향후 여러 대의 서버로 확장하거나 타 서비스와 세션을 공유할 때에도 추가적인 구조 변경 없이 대응 가능합니다.
+---
+### 🧾 phase2
 
-### [Decision 2] Argon2 해시 알고리즘 채택 이유
-*   **Context**: 기존 BCrypt는 오랜 기간 검증된 알고리즘이지만, 패스워드를 72바이트로 제한하는 구조적 한계와 GPU 기반 병렬 공격에 대한 상대적 취약성이 존재합니다.
-*   **Rationale**: Argon2는 메모리 하드(Memory-hard) 방식으로 설계되어, 대규모 하드웨어를 동원한 공격에 대해 BCrypt보다 훨씬 높은 저항성을 가짐. 장기적인 보안 지속 가능성을 위해 최신 표준인 Argon2를 선택헸습니다.
-    다만 개인 프로젝트 규모에서는 리소스 부담이 있는 선택임을  인지하고 있으며, 실무에서는 서버 환경과 트래픽을 고려한 튜닝이 필요하다 생각합니다.
+### 🔹 Phase 2-1: JWT 발급 전략
 
-
-## 📝 Technical Decision Record (TDR)
-
-| Decision | Context | Analysis / Problem | Decision (Rationale) | 효과 |
-|----------|--------|-------------------|----------------------|------|
-| **Redis 기반 세션** | 제한된 서버 자원 환경에서 동시 접속 증가 시 DB 커넥션 풀 고갈로 서비스 장애 발생 | 세션 검증이 비즈니스 쿼리와 동일 DB 커넥션을 사용 → 병목 발생 | - 세션을 Redis로 분리하여 DB 부하 감소<br>- 인증 저장소 분리로 독립성 확보<br>- 중앙 세션 관리로 확장성 확보 | - DB는 비즈니스 로직에 집중<br>- 인증 병목 제거<br>- Scale-out 대응 가능 |
-| **Argon2 해시 알고리즘** | BCrypt는 검증된 알고리즘이나 72바이트 제한 및 GPU 병렬 공격에 상대적 취약성 존재 | 장기적인 보안 지속성 및 최신 공격 대응 한계 | - Memory-hard 기반 Argon2 적용<br>- GPU 공격 저항성 강화<br>- 최신 보안 표준 적용 | - 보안 강도 향상<br>- 장기적 안전성 확보<br>- (Trade-off) 리소스 사용 증가 |
-
-
-### 🔹 Redis 세션
-
-| 구분 | As-Is | To-Be | 효과 |
-|------|------|------|------|
-| 세션 저장 | PostgreSQL | Redis | 조회 성능 향상 |
-| 리소스 | DB 커넥션 공유 | 역할 분리 | 병목 제거 |
-| 확장성 | 단일 서버 | 중앙 세션 | Scale-out |
+| 구분 | Access Token | Refresh Token |
+|------|--------------|---------------|
+| **용도** | 서비스 접근 권한 인증 | Access Token 재발급 |
+| **만료 시간** | 15분 (Short-lived) | 7일 (Long-lived) |
+| **전달 방식** | Authorization Header (Bearer) | HttpOnly Cookie |
+| **포함 정보** | sub, roles, iat, exp | sub, iat, exp |
 
 | 항목 | 내용 |
 |------|------|
-| Context | 동시 접속 증가 시 DB 커넥션 풀 고갈 |
-| Analysis | 세션 조회가 DB 병목 유발 |
-| Decision | Redis로 세션 분리 |
-| Rationale | 자원 효율화 / 독립성 확보 / 확장성 |
-| Trade-off | Redis 인프라 및 운영 비용 |
+| **Decision** | Access Token(Header) + Refresh Token(Cookie) 이원화 전략 |
+| **Rationale** | XSS 공격으로부터 Refresh Token을 보호하고, CSRF 위험이 낮은 헤더 방식을 Access Token에 적용하여 보안과 편의성 균형 확보 |
+| **Security** | Refresh Token에 HttpOnly 옵션을 부여하여 자바스크립트를 통한 탈취 방지 |
 
 ---
 
-### 🔹 Argon2
+### 🔹 Phase 2-2: Redis Refresh Token 관리
 
-| 구분 | As-Is (BCrypt) | To-Be (Argon2) | 효과 |
-|------|--------------|---------------|------|
-| 입력 제한 | 72 byte | 제한 없음 | 유연성 증가 |
-| 공격 대응 | GPU 취약 | Memory-hard | 보안 강화 |
-| 성능 | 상대적 가벼움 | 비용 높음 | Trade-off |
+| 구분 | AS-IS (Phase 2-1) | TO-BE (Phase 2-2) | 효과 |
+|------|-------------------|-------------------|------|
+| **저장소** | 없음 (Stateless 지향) | **Redis (Refresh Token 전용)** | 토큰 제어권 확보 |
+| **재발급** | 단순 유효성 검증 | **Redis 내 값 일치 여부 확인** | 비정상 토큰 차단 |
+| **로그아웃** | 클라이언트 측 토큰 삭제 | **서버 측 Redis 데이터 삭제** | 즉각적인 세션 만료 |
+| **보안** | 토큰 탈취 시 만료까지 유효 | **Token Rotation (1회용)** | 탈취된 토큰의 재사용 방지 |
 
 | 항목 | 내용 |
 |------|------|
-| Context | 기존 해시 알고리즘 한계 |
-| Decision | Argon2 채택 |
-| Rationale | 최신 보안 표준 / 공격 저항성 |
-| Trade-off | 리소스 사용 증가 |
+| **Decision** | Redis 기반 Token Rotation (RTR) 전략 채택 |
+| **Rationale** | Stateless의 한계(서버의 제어권 부재)를 보완하기 위해, Refresh Token만 상태를 관리하여 보안 사고 시 즉각적인 대응(로그아웃, 강제 세션 종료)이 가능하도록 설계 |
+| **Trade-off** | Redis 인프라 의존성 발생 및 매 재발급 시 Redis I/O 비용 추가 |
+
+#### 🛠️ 구현 근거 (Code Snippet)
+```java
+// UserController.java - 재발급 시 기존 토큰 무효화 및 신규 발급
+@PostMapping("/api/v1/refresh")
+public ResponseEntity<Void> refresh(HttpServletRequest request) {
+    // Redis에 저장된 토큰과 클라이언트가 보낸 토큰 비교
+    String savedToken = refreshTokenRepository.findByUsername(username)
+            .orElseThrow(() -> new RuntimeException("Refresh Token이 만료되었습니다."));
+
+    if (!savedToken.equals(refreshToken)) {
+        // 탈취된 토큰의 재사용 감지 시 즉시 전체 세션 무효화
+        refreshTokenRepository.deleteByUsername(username);
+        throw new RuntimeException("비정상적인 토큰 접근입니다.");
+    }
+
+    // 기존 토큰 삭제 후 신규 한 쌍 발급 (One-time use)
+    refreshTokenRepository.deleteByUsername(username);
+    String newAccessToken = jwtProvider.createAccessToken(username, role);
+    String newRefreshToken = jwtProvider.createRefreshToken(username);
+    refreshTokenRepository.save(username, newRefreshToken, refreshExpiration);
+}
+```
+
+---
+
+### 🔹 Phase 2-3: Stateless JWT 인증 완성
+
+| 구분 | AS-IS (Phase 2-2) | TO-BE (Phase 2-3) | 효과 |
+|------|-------------------|-------------------|------|
+| **인증 방식** | Session + JWT (Hybrid) | **Pure JWT (Stateless)** | 서버 메모리 자원 절약 |
+| **세션 유지** | `JSESSIONID` 쿠키 사용 | **쿠키 미사용 (No Session)** | CSRF 취약점 방어 강화 |
+| **사용자 검증** | 매 요청 시 세션/DB 조회 가능 | **토큰 서명 검증 (Self-contained)** | DB/Redis 조회 부하 최소화 |
+| **확장성** | 세션 클러스터링 필요 | **완벽한 수평 확장 (Scale-out)** | 무상태 서버 구성 가능 |
+
+| 항목 | 내용 |
+|------|------|
+| **Decision** | `SessionCreationPolicy.STATELESS` 및 서명 기반 즉시 검증 |
+| **Rationale** | 토큰 자체에 권한(`roles`)을 포함하여 매 요청마다 DB를 조회하지 않고도 인가 처리가 가능하도록 구현. 이를 통해 분산 환경에서의 성능 극대화 |
+| **Trade-off** | 토큰이 탈취되었을 때 만료 전까지는 서버에서 개별적으로 무효화하기 어려움 (Refresh Token을 통한 RTR로 보완) |
+
+#### 🛠️ 구현 근거 (Code Snippet)
+```java
+// SecurityConfig.java - 세션 생성 정책 변경
+@Bean
+public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    http
+        .csrf(AbstractHttpConfigurer::disable) // REST API이므로 CSRF 비활성화
+        .sessionManagement(session -> session
+            .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // 세션 생성 방지
+        )
+        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+    return http.build();
+}
+```
+
+---

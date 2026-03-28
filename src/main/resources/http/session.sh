@@ -1,57 +1,60 @@
 #!/bin/bash
 
-# Redis 세션 관련 테스트
-# 주의: user.sh를 먼저 실행하여 testuser가 생성되어 있어야 합니다.
+# JWT 및 Redis Refresh Token 상태 확인 테스트
+# Phase 2: Stateless Authentication with Redis Refresh Token
 
 BASE_URL="http://localhost:8080"
-COOKIE_JAR="session_cookies.txt"
+COOKIE_JAR="jwt_cookies.txt"
 
-# Function to make curl request with HTTP status code
+# Function to make curl request and separate headers from body
 do_curl() {
-  curl -s -w "\nHTTP Status: %{http_code}\n" "$@"
+  local method=$1
+  local url=$2
+  shift 2
+  curl -s -D - "$@" "$url" -X "$method"
 }
 
 rm -f "$COOKIE_JAR"
 
-echo "=== Redis Session Test ==="
+echo "=== JWT & Redis Refresh Token Test ==="
 echo ""
 
 echo "=== 1. Login (testuser) ==="
-do_curl -X POST "$BASE_URL/api/v1/login" \
+LOGIN_RESPONSE=$(do_curl POST "$BASE_URL/api/v1/login" \
   -c "$COOKIE_JAR" \
-  -d "username=testuser&password=password123"
+  -d "username=testuser&password=password123")
+
+ACCESS_TOKEN=$(echo "$LOGIN_RESPONSE" | grep -i "Authorization:" | awk '{print $2}' | tr -d '\r')
+echo "Login successful. Access Token received."
 echo
 
-echo ""
-echo "=== 2. Show session cookie ==="
-cat "$COOKIE_JAR"
+echo "=== 2. Check Redis for Refresh Token (Key: RT:testuser) ==="
+# Using auth-redis container name from docker-compose.yml
+docker exec auth-redis redis-cli keys 'RT:*'
+echo "Token Value in Redis:"
+docker exec auth-redis redis-cli get 'RT:testuser'
 echo ""
 
-echo ""
-echo "=== 3. Access authenticated API with session ==="
-do_curl -X GET "$BASE_URL/api/v1/users/me" \
-  -b "$COOKIE_JAR"
-echo
-
-echo ""
-echo "=== 4. Check Redis for session keys ==="
-docker exec snsredis redis-cli keys '*'
-
-echo ""
-echo "=== 5. Logout ==="
-do_curl -X POST "$BASE_URL/api/v1/logout" \
+echo "=== 3. Refresh Token (Verify Redis Update) ==="
+REFRESH_RESPONSE=$(do_curl POST "$BASE_URL/api/v1/refresh" \
   -b "$COOKIE_JAR" \
-  -c "$COOKIE_JAR"
+  -c "$COOKIE_JAR")
+
+NEW_ACCESS_TOKEN=$(echo "$REFRESH_RESPONSE" | grep -i "Authorization:" | awk '{print $2}' | tr -d '\r')
+echo "Refresh successful. New Access Token received."
 echo
 
+echo "=== 4. Check Redis again (Rotation Check) ==="
+docker exec auth-redis redis-cli get 'RT:testuser'
 echo ""
-echo "=== 6. Access after logout (should fail 401) ==="
-do_curl -X GET "$BASE_URL/api/v1/users/me" \
-  -b "$COOKIE_JAR"
+
+echo "=== 5. Logout ==="
+do_curl POST "$BASE_URL/api/v1/logout" \
+  -b "$COOKIE_JAR" \
+  -H "Authorization: Bearer $NEW_ACCESS_TOKEN"
 echo
 
-echo ""
-echo "=== 7. Check Redis after logout (session should be removed) ==="
-docker exec snsredis redis-cli keys '*'
+echo "=== 6. Check Redis after logout (Should be deleted if LogoutHandler is implemented) ==="
+docker exec auth-redis redis-cli keys 'RT:*'
 
 rm -f "$COOKIE_JAR"

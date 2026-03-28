@@ -1,7 +1,6 @@
 package com.pebble.baseAuth.config;
 
 import lombok.RequiredArgsConstructor;
-import org.jspecify.annotations.NonNull;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -14,49 +13,51 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
-import org.springframework.security.web.context.SecurityContextRepository;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @RequiredArgsConstructor
 /**
  * [권한 시스템 도입 - Step 3]
- * @EnableMethodSecurity: 메서드 레벨에서 권한을 체크할 수 있게 합니다. (예: @PreAuthorize)
- * 이전의 @EnableGlobalMethodSecurity 대신 최신 Spring Security에서는 이 어노테이션을 사용합니다.
+ * [Phase 2-3] Stateless 인증 체계로 전환합니다.
  */
 @EnableMethodSecurity
 public class SecurityConfig {
 
     private final CustomAuthenticationHandler authenticationHandler;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Bean
-    public SecurityFilterChain securityFilterChain(@NonNull HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                // [Phase 2-3] REST API 기반이므로 CSRF 및 기본 로그인 폼은 사용하지 않습니다.
                 .csrf(AbstractHttpConfigurer::disable)
+                .formLogin(AbstractHttpConfigurer::disable)
+                .httpBasic(AbstractHttpConfigurer::disable)
+                
+                // [Phase 2-3] 모든 세션 관리를 Stateless로 설정 (JSESSIONID 생성 방지)
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
+                
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/v1/users/signup", "/api/v1/login").permitAll()
+                        .requestMatchers("/api/v1/users/signup", "/api/v1/login", "/api/v1/refresh").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
                         .anyRequest().authenticated()
                 )
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
-                )
+                
+                // [Phase 2-3] JWT 필터를 UsernamePasswordAuthenticationFilter 앞에 배치
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint(authenticationHandler)
                 )
                 .logout(logout -> logout
                         .logoutUrl("/api/v1/logout")
-                        .invalidateHttpSession(true)
-                        .deleteCookies("JSESSIONID")
                         .logoutSuccessHandler(authenticationHandler)
                 )
                 .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable));
         return http.build();
-    }
-
-    @Bean
-    public SecurityContextRepository securityContextRepository() {
-        return new HttpSessionSecurityContextRepository();
     }
 
     @Bean
