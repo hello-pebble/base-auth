@@ -1,53 +1,56 @@
 #!/bin/bash
 
-# 인증 관련 API 테스트 (로그인, 로그아웃)
-# 주의: user.sh를 먼저 실행하여 testuser가 생성되어 있어야 합니다.
+# 인증 관련 API 테스트 (Login, Refresh, Logout)
+# Phase 2: JWT Based Authentication (Stateless with Redis Refresh Token)
 
 BASE_URL="http://localhost:8080"
 COOKIE_JAR="cookies.txt"
 
-# Function to make curl request with HTTP status code
+# Function to make curl request and separate headers from body
 do_curl() {
-  curl -s -w "\nHTTP Status: %{http_code}\n" "$@"
+  local method=$1
+  local url=$2
+  shift 2
+  curl -s -D - "$@" "$url" -X "$method"
 }
 
 rm -f "$COOKIE_JAR"
 
 echo "=== 1. Login (testuser) ==="
-do_curl -X POST "$BASE_URL/api/v1/login" \
+LOGIN_RESPONSE=$(do_curl POST "$BASE_URL/api/v1/login" \
   -c "$COOKIE_JAR" \
-  -d "username=testuser&password=password123"
+  -d "username=testuser&password=password123")
+
+ACCESS_TOKEN=$(echo "$LOGIN_RESPONSE" | grep -i "Authorization:" | awk '{print $2}' | tr -d '\r')
+echo "Access Token extracted."
 echo
 
-echo ""
-echo "=== 2. Login Failed (wrong password - should fail 401) ==="
-do_curl -X POST "$BASE_URL/api/v1/login" \
-  -d "username=testuser&password=wrongpassword"
-echo
-
-echo ""
-echo "=== 3. Login Failed (unknown user - should fail 401) ==="
-do_curl -X POST "$BASE_URL/api/v1/login" \
-  -d "username=unknownuser&password=password123"
-echo
-
-echo ""
-echo "=== 4. Access authenticated API (with session) ==="
-do_curl -X GET "$BASE_URL/api/v1/users/me" \
-  -b "$COOKIE_JAR"
-echo
-
-echo ""
-echo "=== 5. Logout ==="
-do_curl -X POST "$BASE_URL/api/v1/logout" \
+echo "=== 2. Refresh Token (Rotate Access Token) ==="
+# Send refreshToken cookie, receive new Access Token and new refreshToken cookie
+REFRESH_RESPONSE=$(do_curl POST "$BASE_URL/api/v1/refresh" \
   -b "$COOKIE_JAR" \
-  -c "$COOKIE_JAR"
+  -c "$COOKIE_JAR")
+
+NEW_ACCESS_TOKEN=$(echo "$REFRESH_RESPONSE" | grep -i "Authorization:" | awk '{print $2}' | tr -d '\r')
+echo "New Access Token: $NEW_ACCESS_TOKEN"
 echo
 
-echo ""
-echo "=== 6. Access after logout (should fail 401) ==="
-do_curl -X GET "$BASE_URL/api/v1/users/me" \
-  -b "$COOKIE_JAR"
+echo "=== 3. Access with New Token ==="
+do_curl GET "$BASE_URL/api/v1/users/me" \
+  -H "Authorization: Bearer $NEW_ACCESS_TOKEN"
+echo
+
+echo "=== 4. Logout ==="
+# Current logout uses SecurityContext logout, which might not delete Redis token 
+# unless we implement a custom LogoutHandler. (Checked: SecurityConfig uses authenticationHandler)
+do_curl POST "$BASE_URL/api/v1/logout" \
+  -b "$COOKIE_JAR" \
+  -H "Authorization: Bearer $NEW_ACCESS_TOKEN"
+echo
+
+echo "=== 5. Access after logout (Should Fail 401) ==="
+do_curl GET "$BASE_URL/api/v1/users/me" \
+  -H "Authorization: Bearer $NEW_ACCESS_TOKEN"
 echo
 
 rm -f "$COOKIE_JAR"

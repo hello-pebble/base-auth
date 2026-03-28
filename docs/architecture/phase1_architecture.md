@@ -13,12 +13,11 @@ graph TD
         AuthHandler[🔑 Custom Auth Handler]
         Controller[🎮 UserController]
         Service[⚙️ UserService]
-        Domain[📦 User Domain Model]
+        Entity[📄 User Entity]
     end
 
     subgraph Persistence_Layer [Persistence Layer]
         Redis[(🧠 Redis: Session )]
-        Entity[📄 User Persistence Entity]
         DB[(🗄️ PostgreSQL: User )]
     end
 
@@ -27,11 +26,10 @@ graph TD
     Security --> AuthHandler
     AuthHandler --> Controller
     Controller --> Service
-    Service -.-> Domain
-    Domain -.-> Entity
-
+    Service -.-> Entity
+    
     Service -->|Auth State| Redis
-    Entity -->|User Data| DB
+    Service -->|User Data| DB
 
     %% 스타일 설정
     style Client fill:#f9f,stroke:#333,stroke-width:2px
@@ -58,10 +56,9 @@ graph TD
     *   **Custom Auth Handler:** 로그인이 성공하거나 실패했을 때, 혹은 권한이 없을 때의 커스텀 로직을 처리합니다.
     *   **UserController:** 클라이언트의 요청(REST API)을 받는 엔드포인트입니다.
     *   **UserService:** 핵심 비즈니스 로직이 수행되는 곳입니다. 세션 상태 확인이나 DB 조회를 지시합니다.
-    *   **User Domain Model:** 비즈니스 로직을 담고 있는 순수 도메인 객체입니다.
+    *   **User Entity:** 데이터베이스의 테이블과 매핑되는 객체 모델입니다.
 
 4.  **Persistence Layer (저장소)**
-    *   **User Persistence Entity:** 데이터베이스의 테이블과 매핑되는 객체 모델입니다. 도메인 모델과 분리되어 영속성을 담당합니다.
     *   **Redis (Session Store):** 로그인한 사용자의 세션 정보(Auth State)를 메모리에 저장합니다. 속도가 매우 빠르며, 여러 서버 간 세션 공유가 가능합니다.
     *   **PostgreSQL (User Store):** 사용자의 프로필, 비밀번호, 가입일 등 영구적인 데이터를 저장하는 관계형 데이터베이스입니다.
 ---
