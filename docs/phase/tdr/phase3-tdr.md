@@ -27,10 +27,17 @@ OAuth2.0 기반 소셜 로그인이 성공한 후, 백엔드에서 생성한 JWT
 - **Access Token**: 유효기간 15분, HttpOnly 쿠키로 전달.
 - **Refresh Token**: 유효기간 7일, HttpOnly 쿠키로 전달 및 Redis 저장.
 - **쿠키 속성**:
-  - `HttpOnly`: JS 접근 차단.
+  - `HttpOnly`: JS 접근 차단 (XSS 방어).
   - `Secure`: HTTPS를 통해서만 전송.
   - `Path=/`: 모든 도메인 경로에서 유효.
+  - `SameSite=Lax`: (추가 예정) CSRF 방어를 위한 기본 브라우저 정책 활용.
 
-## 5. 영향도 (Impacts)
+## 5. CSRF 방어 전략 및 기술적 근거
+현재 REST API 서버로서 CSRF를 비활성화(`csrf().disable()`)했으나, 쿠키 방식을 채택함에 따라 다음과 같은 추가 방어 계층을 고려함:
+1. **SameSite 속성 활용**: 브라우저 레벨에서 타 도메인의 쿠키 전송을 제한하는 `SameSite=Lax` 또는 `Strict`를 적용하여 대부분의 CSRF 공격을 원천 차단 가능함.
+2. **Custom Header 검증**: 클라이언트에서 `X-Requested-With`와 같은 커스텀 헤더를 요구함으로써, 표준 HTML Form 전송을 통한 CSRF 공격을 방어할 수 있음.
+3. **Stateless 한계 인정**: 현재는 MVP 단계이므로 `SameSite` 정책에 의존하며, 향후 민감한 자원 변경 API(POST/PUT/DELETE)에는 별도의 CSRF 토큰 발급을 검토함.
+
+## 6. 영향도 (Impacts)
 - 프론트엔드에서는 요청 시 별도의 토큰 주입 코드가 필요 없으나, `withCredentials: true` 설정이 필요함.
 - CORS 설정 시 `allowCredentials(true)`와 구체적인 `allowedOrigins` 지정이 필수적임.
