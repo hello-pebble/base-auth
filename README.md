@@ -17,5 +17,6 @@
 | **Phase 4**<br/>안정성 및 트래픽 대응                                                                                    | Bucket4j, 분산 락             | Rate Limiting, Race Condition                                             | 트러블슈팅                                                                  | 📅  |
 | **Phase 5**<br/>Reliability & Visibility                                                                        | MDC 로깅, Grafana, Zipkin           | 로그 수집, 모니터링, 트레이싱                                                         | 트러블슈팅                                                                  | 📅  |
 | **부록** <br/> 사용자 관리                                                                                             | 회원가입, 비밀번호 변경, 탈퇴                 | 설계                                                                        | —                                                                      | 📅  |
+=======
 
 ---
