@@ -12,6 +12,10 @@
 *   **증상**: 프론트엔드에서 429 에러를 받았을 때 단순히 실패로 처리하여 사용자가 혼란을 겪는 상황.
 *   **해결**: 응답 JSON에 `message`를 명확히 포함하고, 프론트엔드에서 "잠시 후 시도" 가이드를 노출하도록 협의.
 
-## 4. 메모리 릭 (Memory Leak)
-*   **증상**: IP가 무한히 늘어날 경우 `ConcurrentHashMap`이 가득 차서 JVM OOM(Out of Memory) 발생 가능성.
-*   **해결**: 일정 시간 동안 요청이 없는 IP의 버킷을 자동으로 제거하는 `ExpirePolicy` 도입 또는 Redis 기반의 분산 버킷(TTL 지원) 사용으로 전환.
+## 5. 대기열 이탈 유저의 좀비 데이터 (Abandoned Users)
+*   **증상**: 대기열에 들어온 후 브라우저를 닫은 유저가 Redis Sorted Set에 계속 남아 메모리를 소모하는 문제.
+*   **해결**: `ZREMRANGEBYSCORE`를 사용하여 일정 시간(예: 10분) 이상 응답이 없는 유저를 주기적으로 정리하는 배치 로직 추가 예정.
+
+## 6. 대기열 우회 공격 (Waiting Room Bypass)
+*   **증상**: 대기열 API를 거치지 않고 직접 로그인 API를 호출하여 서버 부하를 일으키는 경우.
+*   **해결**: 실제 로그인 처리 로직(`UserService`) 입구에서 `WaitingRoomService.isUserAllowed()`를 호출하여, 허가된 명부(Set)에 없는 유저는 즉시 거부하도록 설계.

@@ -1,0 +1,8 @@
+feat: complete Phase 4 Traffic Control & establish Phase 5 Engine strategy
+
+- Implement Virtual Waiting Room (Queuing) using Redis Sorted Set.
+- Integrate Waiting Room check into Login API (UserController).
+- Add WaitingRoomScheduler for batch user processing (Traffic Shaping).
+- Update README and Phase 4 docs with end-to-end traffic control scenarios.
+- Create Phase 5 strategy for Asynchronous Non-blocking transition (Coroutine/R2DBC).
+- Finalize the Gateway (Filtering & Queuing) for high-traffic scenarios.

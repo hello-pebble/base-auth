@@ -1,7 +1,0 @@
-feat: implement IP-based rate limiting (Phase 4: Filtering)
-
-- Add Bucket4j and Redisson dependencies for distributed rate limiting.
-- Implement RateLimitFilter for early traffic cutting at the outermost gateway.
-- Extract rate limiting logic to RateLimitService for better SoC and future scalability.
-- Register RateLimitFilter in SecurityConfig before the authentication chain.
-- Add comprehensive documentation: Phase 4 Architecture, TDR, and Troubleshooting.

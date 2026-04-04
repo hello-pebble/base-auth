@@ -15,6 +15,26 @@
 | 폴링/웹소켓 응답 | 사용자에게 "현재 대기 순번"을 반환하고, 서버가 처리 가능한 시점에 진입 허용 | 📅 |
 | 처리량 조절 (Shaping) | 일정 단위(Batch)로 대기열의 유저를 통과시켜 서버 부하를 일정하게 유지 | 📅 |
 
+#### 4-3. 트래픽 제어 통합 시나리오 (End-to-End Flow)
+
+사용자가 로그인을 시도할 때 시스템이 트래픽을 제어하는 전체 흐름입니다.
+
+1.  **입구 컷 (Filtering)**: 
+    *   `RateLimitFilter`가 요청 IP를 확인. 
+    *   1초 내 과도한 요청(매크로) 시 즉시 `429 Too Many Requests` 반환.
+2.  **로그인 시도 (First Attempt)**: 
+    *   사용자가 `POST /api/v1/login` 호출.
+3.  **대기열 판단 (Queuing)**:
+    *   `WaitingRoomService`가 서버 수용량(Capacity) 확인.
+    *   **[즉시 허용]**: 수용량 여유 시 즉시 로그인 로직 수행 및 JWT 발급.
+    *   **[대기 필요]**: 수용량 초과 시 `403 Forbidden`과 함께 **현재 대기 순번** 반환.
+4.  **대기 및 폴링 (Waiting & Polling)**:
+    *   클라이언트는 `GET /api/v1/waiting-room/status`를 주기적으로 호출하여 순번 확인.
+    *   `WaitingRoomScheduler`가 1초마다 일정 인원(Batch)을 '진입 허용' 상태로 전환.
+5.  **최종 진입 (Final Access)**:
+    *   상태가 `ALLOWED`로 바뀌면 클라이언트는 다시 `POST /api/v1/login` 호출.
+    *   서버는 '허용 명부' 확인 후 실제 인증 및 로그인 완료.
+
 ---
 
 ### 🔗 연관 자료

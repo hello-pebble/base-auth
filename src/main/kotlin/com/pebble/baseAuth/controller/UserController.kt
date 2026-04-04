@@ -28,7 +28,8 @@ class UserController(
     private val userService: UserService,
     private val authenticationManager: AuthenticationManager,
     private val jwtProvider: JwtProvider,
-    private val refreshTokenRepository: RefreshTokenRepository
+    private val refreshTokenRepository: RefreshTokenRepository,
+    private val waitingRoomService: com.pebble.baseAuth.config.WaitingRoomService
 ) {
 
     private val log = LoggerFactory.getLogger(this::class.java)
@@ -49,7 +50,18 @@ class UserController(
     }
 
     @PostMapping("/api/v1/login")
-    fun login(@Valid @ModelAttribute request: LoginRequest): ResponseEntity<UserResponse> {
+    fun login(@Valid @ModelAttribute request: LoginRequest): ResponseEntity<Any> {
+        // [Phase 4-2] 가상 대기열 체크: 허용된 유저인지 확인
+        if (!waitingRoomService.isUserAllowed(request.username)) {
+            // 허용되지 않은 경우 대기열에 등록하고 순번 반환
+            val status = waitingRoomService.register(request.username)
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(mapOf(
+                "status" to "WAITING",
+                "message" to "현재 접속 인원이 많아 대기 중입니다.",
+                "rank" to status.rank
+            ))
+        }
+
         // [Phase 2-1] 사용자 인증 처리
         val authentication = authenticationManager.authenticate(
             UsernamePasswordAuthenticationToken(request.username, request.password)
@@ -69,6 +81,9 @@ class UserController(
 
         // [Phase 2-2] Refresh Token을 Redis에 저장 (Key: RT:{username})
         refreshTokenRepository.save(request.username, refreshToken, refreshExpiration)
+
+        // [Phase 4-2] 로그인 성공 시 대기열 허용 명부에서 제거 (메모리 관리)
+        waitingRoomService.removeFromProceed(request.username)
 
         // Refresh Token을 HttpOnly 쿠키로 설정
         val refreshTokenCookie = ResponseCookie.from("refreshToken", refreshToken)
