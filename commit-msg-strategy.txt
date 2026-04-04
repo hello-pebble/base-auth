@@ -1,0 +1,6 @@
+docs: define high-traffic core philosophy and traffic control strategy
+
+- Establish PROJECT_MANIFESTO for the "Zero-Loading Login" goal.
+- Define TRAFFIC_CONTROL_STRATEGY (Filtering & Queuing) for Phase 4.
+- Update README and Roadmap to align with the new vision.
+- Focus Phase 4 exclusively on Traffic Control for peak traffic spikes.

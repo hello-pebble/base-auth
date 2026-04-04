@@ -1,23 +1,50 @@
-### 로그인 서비스
+# 🚀 High-Traffic Auth: The "Zero-Loading" Project
 
-인증은 모든 서비스에서 공통적으로 사용되면서도 트래픽과 보안이 동시에 중요한 영역이라고 생각해서 
-인증 서비스를 직접 설계하는 프로젝트를 진행했습니다.
+인증 서비스는 시스템의 관문입니다. 티켓팅이나 선착순 이벤트에서 발생하는 **'로그인 무한 로딩'**을 기술적으로 완전히 박멸하고, 10만 명 이상의 동시 접속을 견디는 초고성능 인증 엔진을 구축하는 프로젝트입니다.
+
+---
+
+## 🎯 The Vision: "로딩 0초 로그인"
+우리는 단순히 '로그인 기능'을 구현하지 않습니다. 
+**"트래픽 폭주 상황에서도 사용자가 '로그인' 버튼을 누르는 즉시 토큰을 발급받는 시스템"**을 지향합니다.
+
+### 핵심 원칙
+1.  **Stateless First**: 서버 대수를 늘리는 만큼 성능이 비례하여 증가하는 무상태 구조.
+2.  **Safety & Stability**: Kotlin의 Null-Safety와 관용구를 활용한 극한 상황에서의 안정성.
+3.  **Traffic Control**: 비정상은 즉시 차단(Cut)하고, 정상 유저는 스마트하게 대기(Wait)시키는 전략적 관문.
 
 ---
 
-## 🚀 Project Roadmap
+## 🗺️ Project Roadmap
 
-인증/인가 서비스의 단계별 설계 및 구현 기록입니다.
-
-| Phase                                                                                                           | 구현                                | TDR                                                                       | 트러블슈팅                                                                  | 상태  |
-|:----------------------------------------------------------------------------------------------------------------|:----------------------------------|:--------------------------------------------------------------------------|------------------------------------------------------------------------|:---:|
-| **[Phase 1](./docs/phase/phase1.md)**<br/> 초기 구축 및 기본 보안<br/>[아키텍처](./docs/architecture/phase1_architecture.md) | Security 필터, UserDetailsService   | [Redis 기반 세션, Argon2 해시](docs/phase/tdr/phase1-tdr.md)                    | [미인증 접근](docs/phase/troubleshooting/phase1-troubleshooting.md)         |  ✅  |
-| **[Phase 2](./docs/phase/phase2.md)**<br/>JWT 기반 인증 전환<br/> [아키텍처](./docs/architecture/phase2_architecture.md)  | 토큰 발급, Redis 관리,JWT 필터, Kotlin 전환 | [토큰 발급, Redis Refresh, 검증 필터](docs/phase/tdr/phase2-tdr.md) · Java→Kotlin | [jjwt 0.12.6 변경](docs/phase/troubleshooting/phase2-troubleshooting.md) | ✅ |
-| **[Phase 3](./docs/phase/phase3.md)**<br/>기능 확장<br/> [아키텍처](./docs/architecture/phase3_architecture.md)         | OAuth2 연동, Role 접근 제어                    | [OAuth2, RBAC](docs/phase/tdr/phase3-tdr.md)                              | [OAuth2](docs/phase/troubleshooting/phase3-troubleshooting.md)         | ✅  |
-| **[Phase 3.5](./docs/phase/phase3_5.md)**<br/>Kotlin 안정화 및 구조 고도화 | Kotlin 관용구 적용, 순환 참조 해결, 테스트 안정화 | Kotlin 상호운용성, 순환 참조 해결 전략 | Kotlin 전환 이슈 해결 | ✅ |
-| **Phase 4**<br/>안정성 및 트래픽 대응                                                                                    | Bucket4j, 분산 락             | Rate Limiting, Race Condition                                             | 트러블슈팅                                                                  | 📅  |
-| **Phase 5**<br/>Reliability & Visibility                                                                        | MDC 로깅, Grafana, Zipkin           | 로그 수집, 모니터링, 트레이싱                                                         | 트러블슈팅                                                                  | 📅  |
-| **부록** <br/> 사용자 관리                                                                                             | 회원가입, 비밀번호 변경, 탈퇴                 | 설계                                                                        | —                                                                      | 📅  |
-=======
+| Phase | 핵심 가치 (Core Value) | 주요 성과 | 상태 |
+| :--- | :--- | :--- | :---: |
+| **[Phase 1](./docs/phase/phase1.md)** | **Foundation** | Java + 세션 기반 인증 및 Redis 연동 기초 설계 | ✅ |
+| **[Phase 2](./docs/phase/phase2.md)** | **Stateless** | JWT 기반 Stateless 인증 전환 및 RTR(Rotation) 전략 수립 | ✅ |
+| **[Phase 3](./docs/phase/phase3.md)** | **Expansion** | OAuth2(Google/GitHub) 연동 및 권한 체계 확립 | ✅ |
+| **[Phase 3.5](./docs/phase/phase3_5.md)** | **Stability** | Kotlin 전면 전환 및 아키텍처 결합도 완화 | ✅ |
+| **[Phase 4](./docs/phase/phase4.md)** | **The Gateway** | **[Traffic Control]** 비정상 요청 차단 및 가상 대기열 구축 | ⏳ |
+| **Phase 5** | **The Engine** | 비동기(Coroutine/R2DBC) 전환으로 처리 한계 돌파 | 📅 |
+| **Phase 7** | **Perfection** | GraalVM Native Image 및 100k CCU 스트레스 테스트 통과 | 📅 |
 
 ---
+
+## 📑 Core Documentation
+이 프로젝트의 설계 철학과 기술적 의사결정의 이유는 아래 문서에서 확인할 수 있습니다.
+
+*   **[PROJECT_MANIFESTO.md](./docs/PROJECT_MANIFESTO.md)**: "왜 이 프로젝트를 하는가?" (컨셉 및 검증 시나리오)
+*   **[DECISION_LOG_WHY.md](./docs/DECISION_LOG_WHY.md)**: 기술 선택의 이유와 트레이드오프 기록.
+*   **[TRAFFIC_CONTROL_STRATEGY.md](./docs/TRAFFIC_CONTROL_STRATEGY.md)**: Phase 4의 핵심인 '차단과 대기' 전략.
+*   **[ROADMAP_TO_ZERO_LOADING.md](./docs/ROADMAP_TO_ZERO_LOADING.md)**: 최종 목표까지의 기술적 이정표.
+
+---
+
+## 🛠️ Tech Stack
+- **Language**: Kotlin 1.9 (Target JVM 21)
+- **Framework**: Spring Boot 3.4
+- **Security**: Spring Security (OAuth2, JWT)
+- **Database**: PostgreSQL (Persistence), Redis (Token/Queue Management)
+- **Testing**: JUnit 5, Mockito-Kotlin
+
+---
+**"기술은 수단일 뿐, 우리의 목표는 어떤 상황에서도 죽지 않는 인증 시스템입니다."**

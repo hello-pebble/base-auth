@@ -4,12 +4,12 @@
 
 ---
 
-## 🛡️ Phase 4: 안정성 및 트래픽 제어 (The Shield) - [현재 진행 예정]
-*   **핵심**: 폭주하는 요청으로부터 시스템이 '완전히 죽지 않게' 방어막을 구축하는 단계.
+## 🛡️ Phase 4: 트래픽 제어 및 가상 대기열 (The Gateway) - [현재 진행 예정]
+*   **핵심**: 정상 유저는 줄을 세워 보호하고(Wait), 비정상 요청은 즉시 쳐내는(Cut) 스마트 관문 구축.
 *   **주요 과제**: 
-    *   **Rate Limiting (Bucket4j/Redis)**: 비정상적인 반복 요청(매크로 등)을 입구에서 차단하여 서버 자원 보호.
-    *   **Distributed Lock (Redisson)**: 수천 명이 동시에 한 계정으로 로그인 시도 시, 토큰 정합성(RTR)을 깨뜨리지 않고 원자성 보장.
-    *   **Baseline 확립**: 현재 시스템이 초당 몇 건(TPS)을 견디는지 k6/Locust로 정밀 측정하여 개선 지표 확보.
+    *   **Filtering (Bucket4j/IP-based)**: 비정상 트래픽(Bot/Abuse)을 감지하여 즉각 차단.
+    *   **Virtual Waiting Room (Redis)**: 서버 수용량 초과 시, 요청을 Redis 대기열에 담고 순번(Batch)에 따라 처리 허용.
+    *   **Traffic Shaping**: 급격한 트래픽 변동에도 서버 부하를 일정하게 유지(Smoothing).
 
 ## ⚙️ Phase 5: 비동기 논블로킹 전환 (The Engine) - [성능 도약 단계]
 *   **핵심**: 'Thread per Request' 방식의 물리적 한계를 깨고, 적은 자원으로 수만 명을 동시 처리하는 엔진 교체.

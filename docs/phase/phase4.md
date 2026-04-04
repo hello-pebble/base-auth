@@ -1,29 +1,21 @@
-## Phase 4: 안정성 및 트래픽 대응 (Stability & Traffic Handling)
+## Phase 4: 트래픽 제어 및 대기열 관리 (Traffic Control & Waiting Room)
 
-인증 서비스는 시스템의 관문이므로 고부하 상황에서도 안정적이어야 하며, 악의적인 요청(Brute-force 등)으로부터 시스템을 보호할 수 있어야 합니다. Phase 4에서는 처리량 제한(Rate Limiting)과 분산 환경에서의 정합성(Distributed Lock)을 확보합니다.
+인증 시스템의 입구에서 트래픽을 정교하게 제어하여, 어떤 상황에서도 서버의 생존을 보장하고 사용자에게 예측 가능한 대기 경험을 제공합니다.
 
-#### 4-1. 통합 테스트 안정화 및 Baseline 확보
+#### 4-1. 비정상 트래픽 차단 (Filtering)
 | 항목 | 세부 내용 | 상태 |
 | :--- | :--- | :---: |
-| 통합 테스트 수정 | `BaseAuthApplicationTests` 컨텍스트 로드 오류 해결 | ⏳ |
-| 빌드 파이프라인 정비 | Kotlin 전환 후 전체 빌드 및 테스트 자동화 검증 | ⏳ |
+| IP 기반 Rate Limit | Bucket4j를 활용하여 짧은 시간 내 과도한 요청을 보내는 IP 즉시 차단 (429 Too Many Requests) | 📅 |
+| Brute-force 방어 | 로그인 실패 횟수에 따른 계정 임시 잠금 및 요청 제한 | 📅 |
 
-#### 4-2. 트래픽 제어 (Rate Limiting)
+#### 4-2. 가상 대기열 도입 (Queuing & Batching)
 | 항목 | 세부 내용 | 상태 |
 | :--- | :--- | :---: |
-| Bucket4j 도입 | 인메모리/Redis 기반의 Token Bucket 알고리즘 구현 | 📅 |
-| 엔드포인트 보호 | 로그인, 회원가입 API에 대한 IP당 요청 횟수 제한 | 📅 |
-| 커스텀 응답 | 429 Too Many Requests에 대한 가이드라인 제공 | 📅 |
-
-#### 4-3. 동시성 및 데이터 정합성 (Distributed Lock)
-| 항목 | 세부 내용 | 상태 |
-| :--- | :--- | :---: |
-| Redisson 통합 | Redis 기반의 분산 락(Distributed Lock) 라이브러리 도입 | 📅 |
-| RTR 레이스 컨디션 방지 | Refresh Token 재발급 시 동시 요청에 대한 원자성 보장 | 📅 |
-| 회원가입 중복 체크 | 분산 환경에서 초고속 동시 가입 시 유니크 제약 보완 | 📅 |
+| Redis 기반 대기열 | 서버 수용량 초과 시, 요청을 즉시 처리하지 않고 Redis Sorted Set에 담아 순번 부여 | 📅 |
+| 폴링/웹소켓 응답 | 사용자에게 "현재 대기 순번"을 반환하고, 서버가 처리 가능한 시점에 진입 허용 | 📅 |
+| 처리량 조절 (Shaping) | 일정 단위(Batch)로 대기열의 유저를 통과시켜 서버 부하를 일정하게 유지 | 📅 |
 
 ---
 
 ### 🔗 연관 자료
-- **[구현 계획서](../plans/phase4_implementation_plan.md)**
-- **[아키텍처 설계 예정](../architecture/phase4_architecture.md)**
+- **[트래픽 제어 전략 문서](../TRAFFIC_CONTROL_STRATEGY.md)**
