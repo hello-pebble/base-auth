@@ -14,6 +14,17 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.H2Dialect
 
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: dummy-id
+            client-secret: dummy-secret
+          github:
+            client-id: dummy-id
+            client-secret: dummy-secret
+
 jwt:
   secret: test_secret_key_for_testing_purposes_only_1234567890
   access-expiration: 3600000

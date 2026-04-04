@@ -1,8 +1,7 @@
 package com.pebble.baseAuth.config.oauth2;
 
 import com.pebble.baseAuth.domain.User;
-import com.pebble.baseAuth.domain.UserRepository;
-import com.pebble.baseAuth.domain.UserRole;
+import com.pebble.baseAuth.domain.UserService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,7 +27,7 @@ import static org.mockito.Mockito.verify;
 class CustomOAuth2UserServiceTest {
 
     @Mock
-    private UserRepository userRepository;
+    private UserService userService;
 
     @InjectMocks
     private CustomOAuth2UserService oAuth2UserService;
