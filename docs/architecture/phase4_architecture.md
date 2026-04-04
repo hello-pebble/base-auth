@@ -11,12 +11,22 @@
 graph TD
     User[👤 User Request] --> Filter[🛡️ RateLimitFilter]
     
-    subgraph Filtering_Logic [Bucket4j Logic]
+    subgraph Filtering_Logic [4-1. Filtering]
         Filter --> Check{🔍 Has Token?}
-        Check -- NO --> Reject[❌ 429 Too Many Requests]
+        Check -- NO --> Reject[❌ 429 Reject]
     }
     
-    Check -- YES --> Auth[🔑 JwtAuthenticationFilter]
+    Check -- YES --> Capacity{🏗️ Capacity Check}
+    
+    subgraph Queuing_Logic [4-2. Queuing]
+        Capacity -- Full --> Wait[⏳ Sorted Set Queue]
+        Wait --> Scheduler[⚙️ Batch Scheduler]
+        Scheduler --> Allowed[✅ Allowed Set]
+    end
+    
+    Capacity -- OK --> Auth[🔑 JwtAuthenticationFilter]
+    Allowed --> Auth
+    
     Auth --> Service[⚙️ UserService]
     Service --> DB[(🗄️ PostgreSQL)]
 ```
@@ -31,3 +41,6 @@ graph TD
 2.  IP별 전용 '버킷' 확인.
 3.  버킷에 토큰이 남아있다면 1개 소모 후 통과.
 4.  토큰이 없다면 즉시 응답 반환 (비즈니스 로직 진입 차단).
+을 계산하여 클라이언트에 반환.
+3.  **배치 처리**: 백그라운드 스케줄러가 1초마다 상위 N명의 유저를 '진입 허용(Set)' 명부로 이동.
+4.  **폴링 확인**: 클라이언트가 주기적으로 상태를 확인하다가 `ALLOWED` 상태가 되면 실제 비즈니스 로직(로그인) 수행.
