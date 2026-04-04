@@ -2,7 +2,6 @@ package com.pebble.baseAuth.security;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.crypto.password.Pbkdf2PasswordEncoder;
@@ -18,11 +17,10 @@ class PasswordEncoderBenchmarkTest {
     private static final int ITERATIONS = 5; // 정확도를 위해 5회 반복 측정
 
     @Test
-    @DisplayName("암호화 알고리즘별 성능 비교 측정 (BCrypt, Argon2, SCrypt, PBKDF2)")
+    @DisplayName("암호화 알고리즘별 성능 비교 측정 (BCrypt, SCrypt, PBKDF2)")
     void compareEncryptionSpeed() {
         Map<String, PasswordEncoder> encoders = new LinkedHashMap<>();
-        encoders.put("BCrypt (Strength 10)", new BCryptPasswordEncoder());
-        encoders.put("Argon2 (Spring 5.8 Defaults)", Argon2PasswordEncoder.defaultsForSpringSecurity_v5_8());
+        encoders.put("BCrypt (Strength 10 - Standard)", new BCryptPasswordEncoder());
         encoders.put("SCrypt (Spring 5.8 Defaults)", SCryptPasswordEncoder.defaultsForSpringSecurity_v5_8());
         encoders.put("PBKDF2 (Spring 5.8 Defaults)", Pbkdf2PasswordEncoder.defaultsForSpringSecurity_v5_8());
 
