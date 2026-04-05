@@ -29,31 +29,38 @@
 ---
 
 ## ⚡ Current Milestone: Phase 4 (The Gateway)
-우리는 트래픽 폭주 상황에서 서버의 생존을 보장하는 '스마트 관문'을 완성했습니다.
+**"서버가 죽지 않는 인증 관문(Smart Gateway) 구축"**  
+단순한 로그인을 넘어, 트래픽 폭주 시나리오에서 시스템을 보호하는 '교통 제어 시스템'을 완성했습니다.
 
-*   **Filtering (Cut)**: `Bucket4j`를 이용해 비정상 IP 요청을 즉시 쳐내어 서버 자원 보호.
-*   **Queuing (Wait)**: 수용량 초과 시 Redis Sorted Set 대기열에 줄을 세워 시스템 마비 방지.
-*   **Traffic Shaping**: 1초마다 고정된 배치(Batch) 인원만 진입시켜 서버 부하를 일정하게 유지.
-*   **[시나리오 확인](./docs/phase/phase4.md#4-3-트래픽-제어-통합-시나리오-end-to-end-flow)**: 비정상 차단부터 정상 유저 대기까지의 전 과정 통합 완료.
+### 🚥 시나리오별 대응 전략 (Traffic Control Logic)
 
----
-
-## 🚀 Future Vision: Phase 5 (The Engine)
-교통정리(Phase 4)가 끝났다면, 이제는 고속도로의 차선 자체를 늘릴 차례입니다.
-
-*   **Non-blocking I/O**: `Kotlin Coroutines`를 도입하여 쓰레드 점유 없이 수만 명을 동시 처리.
-*   **Reactive Data**: `R2DBC`로의 전환을 통해 DB 연동 과정의 모든 병목 제거.
-*   **Extreme Performance**: 자주 조회되는 유저 정보를 메모리에 캐싱하여 응답 지연(Latency) 극대화 단축.
+| 상황 (Scenario) | 우리의 해결책 (Solution) | 기대 효과 및 설계 근거 (Why?) |
+| :--- | :--- | :--- |
+| **비정상 매크로 공격** | **[IP 기반 즉시 차단](./docs/phase/tdr/phase4-tdr.md#2-1-filtering-bucket4j)** | 1초에 수십 번 요청하는 비정상 IP를 필터 계층에서 즉시 쳐내어 DB 부하를 원천 봉쇄함. |
+| **티켓팅 등 접속 폭주** | **[가상 대기열(Queuing)](./docs/TRAFFIC_CONTROL_STRATEGY.md#2-2-queuing-virtual-waiting-room)** | 무작정 접속을 허용하지 않고 Redis에 줄을 세워, 서버가 감당 가능한 만큼만 순차적으로 진입시킴. |
+| **급격한 트래픽 스파이크** | **[Traffic Shaping](./docs/architecture/phase4_architecture.md#4-데이터-흐름)** | 1초마다 고정된 인원(Batch)만 통과시켜, CPU 점유율이 튀는 현상을 방지하고 처리량을 일정하게 유지(Smoothing)함. |
 
 ---
 
-## 📑 Core Documentation
-이 프로젝트의 설계 철학과 기술적 의사결정의 이유는 아래 문서에서 확인할 수 있습니다.
+## ⚠️ Phase 4의 한계와 다음 단계 (The Bridge to Phase 5)
+Phase 4에서 '교통 정리'는 성공했지만, 근본적으로 **차선(쓰레드)의 개수** 자체가 부족한 문제는 여전히 남아있습니다.
 
-*   **[PROJECT_MANIFESTO.md](./docs/PROJECT_MANIFESTO.md)**: "왜 이 프로젝트를 하는가?" (컨셉 및 검증 시나리오)
-*   **[DECISION_LOG_WHY.md](./docs/DECISION_LOG_WHY.md)**: 기술 선택의 이유와 트레이드오프 기록.
-*   **[TRAFFIC_CONTROL_STRATEGY.md](./docs/TRAFFIC_CONTROL_STRATEGY.md)**: Phase 4의 핵심인 '차단과 대기' 전략.
-*   **[ROADMAP_TO_ZERO_LOADING.md](./docs/ROADMAP_TO_ZERO_LOADING.md)**: 최종 목표까지의 기술적 이정표.
+*   **현재의 한계 (Phase 4)**: 
+    *   **Blocking I/O**: 대기열에 있는 유저를 처리하는 동안 서버의 쓰레드가 계속 점유되어, 실제 처리량(Throughput) 증대에는 한계가 있음.
+    *   **Ghost User**: 대기열에 들어왔다가 이탈한 유저를 완벽하게 정제하지 못하는 자원 낭비 발생.
+*   **해결책 (Phase 5)**: 
+    *   **Coroutine**: 쓰레드 점유 없이 수만 명을 동시에 다루는 비동기 엔진으로 전환.
+    *   **자원 효율화**: 실시간 Heartbeat 도입으로 이탈한 유저를 즉시 제거하여 대기열 회전율 극대화.
+
+---
+
+## 📑 Core Documentation (Deep Dive)
+설계 철학과 기술적 의사결정의 상세 내역은 아래 문서들을 참고하세요.
+
+*   **[PROJECT_MANIFESTO.md](./docs/PROJECT_MANIFESTO.md)**: 전체 프로젝트의 존재 이유와 검증 시나리오.
+*   **[TRAFFIC_CONTROL_STRATEGY.md](./docs/TRAFFIC_CONTROL_STRATEGY.md)**: Phase 4의 핵심 전략인 '차단과 대기'의 상세 설계.
+*   **[DECISION_LOG_WHY.md](./docs/DECISION_LOG_WHY.md)**: 기술 선택 시의 고민과 트레이드오프 기록.
+*   **[PHASE 4 Architecture](./docs/architecture/phase4_architecture.md)**: 스마트 게이트웨이의 데이터 흐름도.
 
 ---
 
