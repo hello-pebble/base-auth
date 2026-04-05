@@ -7,9 +7,8 @@
 Phase 4에서는 최외곽 필터 계층에서 비정상 트래픽을 선제적으로 차단합니다.
 
 ### 2. 아키텍처 다이어그램
-
 ```mermaid
-graph TD
+flowchart TD
     User["User Request"] --> Filter["RateLimitFilter"]
 
     subgraph Filtering_Logic ["4-1. Filtering"]
@@ -19,11 +18,11 @@ graph TD
     end
 
     subgraph Queuing_Logic ["4-2. Queuing"]
-        Capacity -- "Full" --> Wait["Sorted Set Queue"]
-        Wait --> Scheduler["Batch Scheduler"]
+        Wait["Sorted Set Queue"] --> Scheduler["Batch Scheduler"]
         Scheduler --> Allowed["Allowed Set"]
     end
 
+    Capacity -- "Full" --> Wait
     Capacity -- "OK" --> Auth["JwtAuthenticationFilter"]
     Allowed --> Auth
 
