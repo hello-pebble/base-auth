@@ -1,70 +1,102 @@
-# 🚀 High-Traffic Auth: The "Zero-Loading" Project
+### 🚀 프로젝트 로드맵
+```mermaid
+graph LR
+    %% 단계 정의
+    Step1(<b>Phase 1. 문제 정의</b><br/>운영 비효율 진단<br/>아키텍처 설계)
+    Step2(<b>Phase 2. 엔진 구축</b><br/>Auth Server 구현<br/>보안 프로토콜 적용)
+    Step3(<b>Phase 3. 통합</b><br/>SSO 통합 검증<br/>관리자 반복로그인 제거)
+    Step3.5(<b>Phase 3.5. 운영 최적화</b><br/>임계치 도달<br/>인증 안정성 확보)
+    Step4(<b>Phase 4. 비즈니스 확장</b><br/>신규 서비스 즉시 연결<br/>플랫폼 생태계 완성)
 
-인증 서비스는 시스템의 관문입니다. 티켓팅이나 선착순 이벤트에서 발생하는 **'로그인 무한 로딩'**을 기술적으로 완전히 박멸하고, 10만 명 이상의 동시 접속을 견디는 초고성능 인증 엔진을 구축하는 프로젝트입니다.
+    %% 흐름 연결
+    Step1 --> Step2
+    Step2 -->Step3
+    Step3 -->Step3.5
+    Step3.5 -->Step4
 
----
+    %% 스타일링
+    style Step1 fill:#000000,stroke:#455a64,stroke-width:2px
+    style Step2 fill:#000000,stroke:#455a64,stroke-width:2px
+    style Step3 fill:#000000,stroke:#455a64,stroke-width:2px
+    style Step3.5 fill:#000000,stroke:#f57c00,stroke-width:2px
+    style Step4 fill:#000000,stroke:#455a64,stroke-width:2px
 
-## 🎯 The Vision: "로딩 0초 로그인"
-"트래픽 폭주 상황에서도 사용자가 '로그인' 버튼을 누르는 즉시 토큰을 발급받는 시스템" 을 목표로 진행합니다.
+    %% 하단 주석 대신 방향성 표시
+    classDef default font-family:Arial,font-size:13px;
 
-### 핵심 원칙
-1.  **Stateless First**: 서버 대수를 늘리는 만큼 성능이 비례하여 증가하는 무상태 구조.
-2.  **Safety & Stability**: Kotlin의 Null-Safety와 관용구를 활용한 극한 상황에서의 안정성.
-3.  **Traffic Control**: 비정상은 즉시 차단(Cut)하고, 정상 유저는 스마트하게 대기(Wait)시키는 전략적 관문.
-
----
-
-## 🗺️ Project Roadmap
-
-| Phase | 핵심 가치 (Core Value) | 주요 성과 | 상태 |
-| :--- | :--- | :--- | :---: |
-| **[Phase 1](./docs/phase/phase1.md)** | **Foundation** | Java + 세션 기반 인증 및 Redis 연동 기초 설계 | ✅ |
-| **[Phase 2](./docs/phase/phase2.md)** | **Stateless** | JWT 기반 Stateless 인증 전환 및 RTR(Rotation) 전략 수립 | ✅ |
-| **[Phase 3](./docs/phase/phase3.md)** | **Expansion** | OAuth2(Google/GitHub) 연동 및 권한 체계 확립 | ✅ |
-| **[Phase 3.5](./docs/phase/phase3_5.md)** | **Stability** | Kotlin 전면 전환 및 아키텍처 결합도 완화 | ✅ |
-| **[Phase 4](./docs/phase/phase4.md)** | **The Gateway** | **[Traffic Control]** 비정상 IP 차단(Filtering) 및 가상 대기열(Queuing) 구축 | ✅ |
-| **Phase 5** | **The Engine** | 비동기(Coroutine/R2DBC) 전환으로 쓰레드 점유 해소 및 처리 한계 돌파 | ⏳ |
-| **Phase 7** | **Perfection** | GraalVM Native Image 및 100k CCU 스트레스 테스트 통과 | 📅 |
-
----
-
-## ⚡ Current Milestone: Phase 4 (The Gateway)
-**"서버가 죽지 않는 인증 관문(Smart Gateway) 구축"**  
-단순한 로그인을 넘어, 트래픽 폭주 시나리오에서 시스템을 보호하는 '교통 제어 시스템'을 완성했습니다.
-
-### 🚥 시나리오별 대응 전략 (Traffic Control Logic)
-
-| 상황 (Scenario) | 우리의 해결책 (Solution) | 기대 효과 및 설계 근거 (Why?) |
-| :--- | :--- | :--- |
-| **비정상 매크로 공격** | **[IP 기반 즉시 차단](./docs/phase/tdr/phase4-tdr.md#2-1-filtering-bucket4j)** | 1초에 수십 번 요청하는 비정상 IP를 필터 계층에서 즉시 쳐내어 DB 부하를 원천 봉쇄함. |
-| **티켓팅 등 접속 폭주** | **[가상 대기열(Queuing)](./docs/TRAFFIC_CONTROL_STRATEGY.md#2-2-queuing-virtual-waiting-room)** | 무작정 접속을 허용하지 않고 Redis에 줄을 세워, 서버가 감당 가능한 만큼만 순차적으로 진입시킴. |
-| **급격한 트래픽 스파이크** | **[Traffic Shaping](./docs/architecture/phase4_architecture.md#4-데이터-흐름)** | 1초마다 고정된 인원(Batch)만 통과시켜, CPU 점유율이 튀는 현상을 방지하고 처리량을 일정하게 유지(Smoothing)함. |
+    %% 클릭 이벤트 추가
+    click Step1 "./docs/phase/phase1.md"
+    click Step2 "./docs/phase/phase2.md"
+    click Step3 "./docs/phase/phase3.md"
+    click Step3.5 "./docs/phase/phase3_5.md"
+    click Step4 "./docs/phase/phase4.md"
+```
+Step3.5<br/>
+평소보다 20배 높은 트래픽이 몰리며 서버의 초기 설정값(Thread/Connection Pool)이 임계치에 도달
 
 ---
+### 🧾 프로젝트 목표
+```mermaid
+graph LR
+%% 1. 과거 상태 (Legacy)
+    subgraph Legacy [Before: 파편화된 서비스]
+        direction TB
+        P1[프로젝트 A] --- DB1[(회원DB)]
+        P2[프로젝트 B] --- DB2[(회원DB)]
+        Admin1((관리자)) -.->|중복 로그인/관리| P1
+        Admin1 -.->|중복 로그인/관리| P2
+    end
 
-## ⚠️ Phase 4의 한계와 다음 단계 (The Bridge to Phase 5)
-Phase 4에서 '교통 정리'는 성공했지만, 근본적으로 **차선(쓰레드)의 개수** 자체가 부족한 문제는 여전히 남아있습니다.
+%% 2. 현재 구축 단계 (Implementation)
+    subgraph Current [Current: 통합 프로세스 구축]
+        direction TB
+        S1[<b>1. 인증 통합</b><br/>중앙 인증 엔진 구축]
+        S2[<b>2. 권한 위임</b><br/>OAuth2 표준 적용]
+        S3[<b>3. 연동 규격화</b><br/>로그인 흐름 일원화]
 
-*   **현재의 한계 (Phase 4)**: 
-    *   **Blocking I/O**: 대기열에 있는 유저를 처리하는 동안 서버의 쓰레드가 계속 점유되어, 실제 처리량(Throughput) 증대에는 한계가 있음.
-    *   **Ghost User**: 대기열에 들어왔다가 이탈한 유저를 완벽하게 정제하지 못하는 자원 낭비 발생.
-*   **해결책 (Phase 5)**: 
-    *   **Coroutine**: 쓰레드 점유 없이 수만 명을 동시에 다루는 비동기 엔진으로 전환.
-    *   **자원 효율화**: 실시간 Heartbeat 도입으로 이탈한 유저를 즉시 제거하여 대기열 회전율 극대화.
+        S1 --> S2 --> S3
+    end
+
+%% 3. 최종 지향점 (Target)
+    subgraph Target [Target: 통합 인증 생태계]
+        direction TB
+        Auth[<b>통합 인증 서버</b>]
+        AppA[서비스 A]
+        AppB[서비스 B]
+        AppC{{<b>신규 서비스 C</b>}}
+
+        Auth --- AppA
+        Auth --- AppB
+        Auth --- AppC
+
+        Admin2((관리자)) ==>|Single Sign-On| Auth
+    end
+
+%% 연결선
+    Legacy -.->|인프라 개선| Current
+    Current -.->|생태계 확장| Target
+
+%% 스타일링
+    style S1 fill:#333,color:#fff,stroke:#000
+    style S2 fill:#333,color:#fff,stroke:#000
+    style S3 fill:#333,color:#fff,stroke:#000
+    style Auth fill:#333,stroke:#333,stroke:#000,stroke-width:2px
+    style Target fill:#333,color:#fff,stroke:#fff,stroke-dasharray: 5 5
+```
+---
+* Legacy: 각 서비스별 독립된 DB와 인증 체계로 인해 관리 업무가 비례해서 증가하던 단계입니다.
+* Current: 프로젝트를 통해 파편화된 인증을 중앙 서버로 결집하고 표준을 세우는 단계입니다.
+* Target: 관리자는 단 한 번의 인증으로 모든 권한을 통제하며, 신규 서비스는 개발 공수 없이 즉시 전사 인증 생태계에 합류하는 단계입니다.
 
 ---
-
-## 📑 Core Documentation (Deep Dive)
-설계 철학과 기술적 의사결정의 상세 내역은 아래 문서들을 참고하세요.
-
+### 📑 Core Documentation
+상세 내역은 아래 문서들을 참고하세요.
 *   **[PROJECT_MANIFESTO.md](./docs/PROJECT_MANIFESTO.md)**: 전체 프로젝트의 존재 이유와 검증 시나리오.
 *   **[TRAFFIC_CONTROL_STRATEGY.md](./docs/TRAFFIC_CONTROL_STRATEGY.md)**: Phase 4의 핵심 전략인 '차단과 대기'의 상세 설계.
 *   **[DECISION_LOG_WHY.md](./docs/DECISION_LOG_WHY.md)**: 기술 선택 시의 고민과 트레이드오프 기록.
 *   **[PHASE 4 Architecture](./docs/architecture/phase4_architecture.md)**: 스마트 게이트웨이의 데이터 흐름도.
-
 ---
-
-## 🛠️ Tech Stack
+### 🛠️ Tech Stack
 - **Language**: Kotlin 1.9 (Target JVM 21)
 - **Framework**: Spring Boot 3.4
 - **Security**: Spring Security (OAuth2, JWT)

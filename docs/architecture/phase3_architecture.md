@@ -1,93 +1,90 @@
-# Phase 3: OAuth2.0 소셜 로그인 통합 아키텍처
+# Phase 3 Architecture: Service Integration & SSO Validation
 
-이 문서는 기존 JWT 기반 Stateless 인증 시스템에 OAuth2.0 소셜 로그인(Google, GitHub 등)을 통합한 아키텍처를 설명합니다.
+Phase 3의 아키텍처는 파편화된 각 서비스(Service A, B, C)를 중앙 인증 서버(Auth Server)와 연결하여 **단일 진실의 원천(SSO)**을 실현하는 구조를 가집니다.
 
-## 1. 개요
-- **목표**: 외부 ID 제공자(IdP)를 통한 간편 로그인 지원 및 JWT 기반 통합 인증 체계 구축.
-- **핵심 전략**:
-  - `spring-boot-starter-oauth2-client`를 활용한 표준 프로토콜 준수.
-  - 소셜 로그인 성공 시 기존 JWT 시스템과 연동하여 Access/Refresh 토큰 발급.
-  - 보안 강화를 위해 발급된 토큰은 `HttpOnly` 쿠키를 통해 클라이언트에 전달.
+---
 
-## 2. 시스템 아키텍처 다이어그램
+### 🗺️ 전사 통합 인증 아키텍처
 
 ```mermaid
 graph TD
-    Client[📱 Client Browser]
-
-    subgraph External_IdP [Social Identity Providers]
-        Google[🌐 Google]
-        GitHub[🐙 GitHub]
+    subgraph "Legacy (Before)"
+        S1[Service A] --- DB1[(DB A)]
+        S2[Service B] --- DB2[(DB B)]
+        Admin1((Admin)) -.->|Repeat Login| S1
+        Admin1 -.->|Repeat Login| S2
     end
 
-    subgraph Security_Layer [Spring Security & OAuth2 Client]
-        OauthFilter[🛡️ OAuth2LoginAuthenticationFilter]
-        SuccessHandler[🔑 OAuth2SuccessHandler]
+    subgraph "Phase 3 (Unified Auth Ecosystem)"
+        direction TB
+        Auth[<b>Auth Server</b><br/>SSO / OAuth2]
+        
+        S_A[Service A]
+        S_B[Service B]
+        S_C{{<b>New Service C</b>}}
+        
+        Redis[(<b>Central Redis</b><br/>Shared Session)]
+        Postgres[(<b>Auth DB</b><br/>User/Role Hub)]
+
+        Auth --- Redis
+        Auth --- Postgres
+        
+        Admin2((<b>Admin</b>)) ==>|<b>Single Login</b>| Auth
+        
+        Auth -.->|SSO Session| S_A
+        Auth -.->|SSO Session| S_B
+        Auth == "Immediate Connect" ==> S_C
     end
 
-    subgraph App_Layer [Application Layer]
-        UserService[⚙️ CustomOAuth2UserService]
-        UserInfo[📦 OAuth2UserInfo Factory]
-    end
-
-    subgraph Persistence_Layer [Persistence Layer]
-        Redis_RT[(🧠 Redis: Refresh Token Storage)]
-        DB[(🗄️ PostgreSQL: User Data)]
-    end
-
-    %% OAuth2 Flow
-    Client -->|1. Login Request| OauthFilter
-    OauthFilter -->|2. Redirect| Google
-    OauthFilter -->|2. Redirect| GitHub
-    Google -->|3. Auth Code / Profile| OauthFilter
-    GitHub -->|3. Auth Code / Profile| OauthFilter
-
-    %% Internal Processing
-    OauthFilter -->|4. Load User Info| UserService
-    UserService -->|5. Map & Upsert| UserInfo
-    UserInfo -.->|6. Sync| DB
-
-    %% Success & Token Issuance
-    UserService -->|7. Auth Success| SuccessHandler
-    SuccessHandler -->|8. Issue JWT via HttpOnly Cookies| Client
-    SuccessHandler -->|9. Store RT| Redis_RT
-
-    style External_IdP fill:#f5f5f5,stroke:#9e9e9e
-    style Security_Layer fill:#e1f5fe,stroke:#01579b
-    style SuccessHandler fill:#fff9c4,stroke:#fbc02d
-    style Redis_RT fill:#ffcdd2,stroke:#c62828
+    style Auth fill:#f9f,stroke:#333,stroke-width:3px
+    style S_C fill:#fff3e0,stroke:#e65100,stroke-width:2px,stroke-dasharray: 5 5
+    style Redis fill:#e1f5fe,stroke:#01579b
 ```
 
 ---
 
-## 3. 구성 요소 (Components)
+### 🏗️ 핵심 설계 원칙 (Design Principles)
 
-### 2.1. OAuth2 Client Layer
-- **`CustomOAuth2UserService`**: 소셜 서비스로부터 유저 정보를 가져와 우리 시스템의 유저 모델로 변환 및 DB 동기화(Upsert).
-- **`OAuth2UserInfo` & 구현체**: 각 IdP(Google, GitHub 등)마다 다른 응답 형식을 통일된 인터페이스로 추상화.
-- **`OAuth2UserInfoFactory`**: `registrationId`에 따라 적절한 `OAuth2UserInfo` 객체를 생성하는 팩토리.
+#### 1. 단일 진실의 원천 (Single Source of Truth)
+- 모든 회원의 신원 확인(Identification)과 권한(Authorization)은 **Auth Server** 한 곳에서만 결정함.
+- 개별 서비스는 별도의 회원 DB를 관리하지 않으며, Auth Server에서 제공하는 신원 정보를 기반으로 동작함.
 
-### 2.2. Security Layer
-- **`SecurityConfig`**: `.oauth2Login()` 설정을 통해 OAuth2 흐름을 필터 체인에 통합.
-- **`OAuth2SuccessHandler`**: 인증 성공 후 JWT 발급 및 쿠키 저장 로직을 담당.
-- **`CustomOAuth2User`**: Spring Security의 `OAuth2User`를 확장하여 우리 도메인의 `User` 객체를 포함.
+#### 2. 무중단 SSO 세션 동기화 (Redis-based Session Clustering)
+- 사용자가 한 번 로그인하면, 해당 세션 정보는 **Central Redis**에 저장되어 모든 연동 서비스가 실시간으로 공유함.
+- 서버 장애나 재시작 시에도 Redis를 통해 인증 상태를 유지함으로써 관리자 경험의 단절을 방지함.
 
-### 2.3. Persistence Layer
-- **`UserEntity`**: 소셜 정보를 저장하기 위한 `provider`, `providerId` 필드 추가 및 `password` 선택사항화.
-- **`UserRepository`**: `provider`와 `providerId` 조합으로 유저를 조회하는 기능 추가.
+#### 3. 확장 가능한 표준 인터페이스 (Standardized OAuth2/OIDC)
+- 서비스 연동 시 자체 인증 로직을 구현하지 않고, 표준 OAuth2/OIDC 인터페이스를 따름으로써 신규 서비스 도입 비용을 최소화함.
 
-## 3. 인증 흐름 (Authentication Flow)
+---
 
-1.  **Login Request**: 사용자가 소셜 로그인 버튼 클릭 (`/oauth2/authorization/{provider}`).
-2.  **Redirect to IdP**: Spring Security가 사용자를 Google/GitHub 로그인 페이지로 리다이렉트.
-3.  **Authorization Code**: 로그인이 완료되면 IdP가 서비스로 Authorization Code를 보냄.
-4.  **Token Exchange**: Spring Security가 Code를 Access Token으로 교환.
-5.  **User Info Retrieval**: `CustomOAuth2UserService`가 IdP로부터 사용자 정보를 가져옴.
-6.  **User Sync**: 가져온 정보를 바탕으로 DB에 유저가 없으면 가입, 있으면 정보를 업데이트.
-7.  **Success Handling**: `OAuth2SuccessHandler`가 실행되어 우리 서비스용 JWT(Access/Refresh) 생성.
-8.  **Cookie Response**: 생성된 JWT를 `HttpOnly` 쿠키에 담아 클라이언트로 리다이렉트.
+### 🔄 SSO 시퀀스 흐름 (Service A to Service B)
 
-## 4. 보안 고려 사항
-- **HttpOnly Cookies**: XSS 공격으로부터 토큰을 보호하기 위해 쿠키 방식 채택.
-- **CSRF Protection**: REST API 환경이므로 기본적으로 비활성화되어 있으나, 쿠키 방식을 사용하므로 추후 필요 시 `SameSite` 설정 등을 통해 보완 필요.
-- **Token Rotation**: 소셜 로그인 시에도 기존의 Refresh Token Rotation 전략을 동일하게 적용.
+```mermaid
+sequenceDiagram
+    participant Admin as 관리자 (Admin)
+    participant S_A as 서비스 A (Service A)
+    participant Auth as 인증 서버 (Auth Server)
+    participant S_B as 서비스 B (Service B)
+
+    Note over Admin, S_A: [상황] 서비스 A 이용 중 업무 전환
+    Admin->>S_B: 1. 서비스 B 접속 시도
+    S_B->>Auth: 2. 유효한 SSO 세션 확인 (Silent Check)
+    Auth-->>S_B: 3. 이미 인증된 관리자임을 확인 (OIDC ID Token)
+    S_B-->>Admin: 4. 로그인 없이 즉시 서비스 B 메뉴 활성화
+```
+
+---
+
+### 🛠️ 기술 스택 (Tech Stack)
+- **Central Auth**: Spring Boot + Spring Security OAuth2
+- **Session Hub**: Redis (Session Clustering)
+- **Data Store**: PostgreSQL (Central Identity)
+- **Client Protocol**: OAuth2 Client Library (Standard)
+
+---
+
+### 🔗 연관 자료
+- **[Phase 3 Detail](./../phase/phase3.md)**: 단계별 상세 로드맵
+- **[Design Notes](./../phase/PHASE3_DESIGN_NOTES.md)**: SSO 구현 시의 기술적 결정 사항
+- **[SSO Implementation Test](../../src/test/java/com/pebble/baseAuth/config/oauth2/CustomOAuth2UserServiceTest.java)**: 실제 연동 검증 테스트 코드
