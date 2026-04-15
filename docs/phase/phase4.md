@@ -19,10 +19,10 @@
 
 사용자가 로그인을 시도할 때 시스템이 트래픽을 제어하는 전체 흐름입니다.
 
-1.  **입구 컷 (Filtering)**: 
-    *   `RateLimitFilter`가 요청 IP를 확인. 
+1.  **입구 컷 (Filtering)**:
+    *   `RateLimitFilter`가 요청 IP를 확인.
     *   1초 내 과도한 요청(매크로) 시 즉시 `429 Too Many Requests` 반환.
-2.  **로그인 시도 (First Attempt)**: 
+2.  **로그인 시도 (First Attempt)**:
     *   사용자가 `POST /api/v1/login` 호출.
 3.  **대기열 판단 (Queuing)**:
     *   `WaitingRoomService`가 서버 수용량(Capacity) 확인.
