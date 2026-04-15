@@ -1,9 +1,4 @@
 # TDR: Phase 3 Service Integration & SSO Validation
-
-**상태**: 승인됨 (Approved)
-**날짜**: 2026-04-13
-**결정권자**: 아키텍처 리뷰 보드 (ARB)
-
 ---
 
 ## 1. 배경 (Context)
@@ -16,23 +11,23 @@
 ### 2.1. 세션 공유 방식 결정: Redis vs Sticky Session
 - **결정**: **Redis 기반 분산 세션 클러스터링 (Spring Session Redis)**
 - **이유**:
-    - Sticky Session은 로드밸런서에 의존적이며, 특정 서버 장애 시 해당 서버의 모든 세션이 유실됨.
-    - Redis를 사용하면 서버의 무상태성(Stateless)을 유지하면서도, 서비스 A와 B가 실시간으로 세션을 공유하여 SSO를 구현하기에 가장 적합함.
+  - Sticky Session은 로드밸런서에 의존적이며, 특정 서버 장애 시 해당 서버의 모든 세션이 유실됨.
+  - Redis를 사용하면 서버의 무상태성(Stateless)을 유지하면서도, 서비스 A와 B가 실시간으로 세션을 공유하여 SSO를 구현하기에 가장 적합함.
 - **트레이드오프**: Redis 인프라 관리 비용이 추가되지만, 운영 안정성과 SSO 구현의 용이성 측면에서 얻는 이득이 훨씬 큼.
 
 ### 2.2. 인증 프로토콜 선정: OAuth2/OIDC vs SAML
 - **결정**: **OAuth2.0 / OpenID Connect (OIDC)**
 - **이유**:
-    - 최신 모바일/웹 환경에서 표준으로 자리 잡았으며, 커스텀 클레임(Claim)을 통한 권한 위임이 용이함.
-    - SAML 대비 가벼운 JSON 기반 토큰을 사용하여 네트워크 부하를 줄일 수 있음.
-    - 신규 서비스 및 오픈소스(Grafana, Jenkins 등)와의 연동 편의성이 압도적임.
+  - 최신 모바일/웹 환경에서 표준으로 자리 잡았으며, 커스텀 클레임(Claim)을 통한 권한 위임이 용이함.
+  - SAML 대비 가벼운 JSON 기반 토큰을 사용하여 네트워크 부하를 줄일 수 있음.
+  - 신규 서비스 및 오픈소스(Grafana, Jenkins 등)와의 연동 편의성이 압도적임.
 - **트레이드오프**: SAML 대비 보안 설정이 복잡할 수 있으나, Spring Security 라이브러리의 강력한 지원으로 상쇄 가능.
 
 ### 2.3. 토큰 전달 방식: HttpOnly Cookie vs Local Storage
 - **결정**: **HttpOnly / Secure Cookie**
 - **이유**:
-    - XSS(Cross-Site Scripting) 공격으로부터 토큰을 보호하기 위해 브라우저 스크립트가 접근할 수 없는 쿠키 방식을 채택.
-    - CSRF(Cross-Site Request Forgery) 위험은 Spring Security의 CSRF Protection 및 `SameSite=Lax` 속성으로 방어 가능.
+  - XSS(Cross-Site Scripting) 공격으로부터 토큰을 보호하기 위해 브라우저 스크립트가 접근할 수 없는 쿠키 방식을 채택.
+  - CSRF(Cross-Site Request Forgery) 위험은 Spring Security의 CSRF Protection 및 `SameSite=Lax` 속성으로 방어 가능.
 - **트레이드오프**: 프론트엔드에서 토큰을 직접 다루기 어려워지지만, 보안 안정성이 최우선 순위임.
 
 ---

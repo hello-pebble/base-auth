@@ -1,6 +1,6 @@
 spring:
   application:
-    name: base-auth
+    name: basic-auth
   datasource:
     url: jdbc:postgresql://localhost:5432/authdb
     username: auth
@@ -29,12 +29,6 @@ spring:
             scope:
               - email
               - profile
-          github:
-            client-id: ${GITHUB_CLIENT_ID}
-            client-secret: ${GITHUB_CLIENT_SECRET}
-            scope:
-              - user:email
-              - read:user
 
 jwt:
   secret: z8vB7yK2pL5mN9qR3wX0sT6vF1gH4jK8lO2pM5nQ9rS3uW6xY0zB2cE5fH8kK1mN

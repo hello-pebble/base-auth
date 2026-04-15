@@ -15,11 +15,11 @@ graph LR
     Step3.5 -->Step4
 
     %% 스타일링
-    style Step1 fill:#000000,stroke:#455a64,stroke-width:2px
-    style Step2 fill:#000000,stroke:#455a64,stroke-width:2px
-    style Step3 fill:#000000,stroke:#455a64,stroke-width:2px
-    style Step3.5 fill:#000000,stroke:#f57c00,stroke-width:2px
-    style Step4 fill:#000000,stroke:#455a64,stroke-width:2px
+    style Step1 fill:#ffffff,color:#000000,stroke:#455a64,stroke-width:2px
+    style Step2 fill:#ffffff,color:#000000,stroke:#455a64,stroke-width:2px
+    style Step3 fill:#ffffff,color:#000000,stroke:#455a64,stroke-width:2px
+    style Step3.5 fill:#ffffff,color:#000000,stroke:#f57c00,stroke-width:2px
+    style Step4 fill:#ffffff,color:#000000,stroke:#455a64,stroke-width:2px
 
     %% 하단 주석 대신 방향성 표시
     classDef default font-family:Arial,font-size:13px;
