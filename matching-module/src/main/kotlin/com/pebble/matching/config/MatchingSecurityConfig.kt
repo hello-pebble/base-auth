@@ -11,16 +11,16 @@ class MatchingSecurityConfig {
 
     @Bean
     fun matchingSecurityFilterChain(http: HttpSecurity): SecurityFilterChain {
-        http
+        return http
             .csrf { it.disable() }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authorizeHttpRequests { auth ->
-                // 실제 운영 시에는 JWT 필터를 통과한 인증 정보가 필요하지만, 
-                // 지금은 로직 검증을 위해 permitAll()로 시작하겠습니다.
-                auth.requestMatchers("/api/v1/matching/**").permitAll()
+                auth.requestMatchers("/api/v1/matching/**").authenticated()
                     .anyRequest().authenticated()
             }
-        
-        return http.build()
+            .oauth2ResourceServer { oauth2 ->
+                oauth2.jwt { }
+            }
+            .build()
     }
 }

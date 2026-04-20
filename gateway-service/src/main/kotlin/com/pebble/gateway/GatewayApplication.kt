@@ -1,12 +1,11 @@
-package com.pebble.matching
+package com.pebble.gateway
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 
 @SpringBootApplication
-class MatchingApplication
+class GatewayApplication
 
 fun main(args: Array<String>) {
-    runApplication<MatchingApplication>(*args)
-    println("매칭 서비스 성공 API 시작")
+    runApplication<GatewayApplication>(*args)
 }

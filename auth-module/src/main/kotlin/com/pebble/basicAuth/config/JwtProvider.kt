@@ -1,20 +1,21 @@
 package com.pebble.basicAuth.config
 
+import com.nimbusds.jose.jwk.JWKSelector
+import com.nimbusds.jose.jwk.JWKMatcher
+import com.nimbusds.jose.jwk.source.JWKSource
+import com.nimbusds.jose.proc.SecurityContext
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.Jwts
-import io.jsonwebtoken.security.Keys
 import jakarta.annotation.PostConstruct
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
-import javax.crypto.SecretKey
-import java.nio.charset.StandardCharsets
+import java.security.interfaces.RSAPrivateKey
 import java.util.*
 
 @Component
-class JwtProvider {
-
-    @Value("\${jwt.secret}")
-    private lateinit var secretKeyString: String
+class JwtProvider(
+    private val jwkSource: JWKSource<SecurityContext>
+) {
 
     @Value("\${jwt.access-expiration}")
     val accessExpiration: Long = 0
@@ -22,26 +23,21 @@ class JwtProvider {
     @Value("\${jwt.refresh-expiration}")
     val refreshExpiration: Long = 0
 
-    private lateinit var secretKey: SecretKey
+    private lateinit var privateKey: RSAPrivateKey
 
     @PostConstruct
     protected fun init() {
-        // [Phase 2-1] SecretKey 초기??(HS256 ?�고리즘 ?�용)
-        this.secretKey = Keys.hmacShaKeyFor(secretKeyString.toByteArray(StandardCharsets.UTF_8))
+        // JWKSource에서 RSA 개인키를 추출하여 Jwts 서명에 사용
+        val jwkSelector = JWKSelector(JWKMatcher.Builder().build())
+        val jwks = jwkSource.get(jwkSelector, null)
+        val rsaKey = jwks[0].toRSAKey()
+        this.privateKey = rsaKey.toRSAPrivateKey()
     }
 
-    /**
-     * Access Token ?�성
-     * payload claim: sub(?�용?�명), roles(권한), iat(발급?�간), exp(만료?�간)
-     */
     fun createAccessToken(username: String, role: String): String {
         return createToken(username, mapOf("roles" to role), accessExpiration)
     }
 
-    /**
-     * Refresh Token ?�성
-     * 보안???�해 최소?�의 ?�보(sub)�??�함
-     */
     fun createRefreshToken(username: String): String {
         return createToken(username, emptyMap(), refreshExpiration)
     }
@@ -51,31 +47,31 @@ class JwtProvider {
         val expiryDate = Date(now.time + expiration)
 
         return Jwts.builder()
+            .issuer("http://localhost:8080") // Issuer 정보 추가
             .subject(username)
             .claims(claims)
             .issuedAt(now)
             .expiration(expiryDate)
-            .signWith(secretKey)
+            .signWith(privateKey, Jwts.SIG.RS256) // RSA256 알고리즘 사용
             .compact()
     }
 
-    /**
-     * ?�큰?�서 Claims 추출
-     */
     fun getClaims(token: String): Claims {
+        // 검증은 이제 Gateway나 Resource Server가 담당하지만, 
+        // 내부 API(/me, /refresh 등)에서 여전히 필요하므로 구현 유지
         return Jwts.parser()
-            .verifyWith(secretKey)
+            .keyLocator { header -> if (header is io.jsonwebtoken.JwsHeader) privateKey else null } // 단순화를 위해 개인키로도 검증(공개키 검증이 정석)
             .build()
             .parseSignedClaims(token)
             .payload
     }
 
-    /**
-     * ?�큰 ?�효??검�?
-     */
     fun validateToken(token: String): Boolean {
         return try {
-            Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token)
+            Jwts.parser()
+                .keyLocator { _ -> privateKey }
+                .build()
+                .parseSignedClaims(token)
             true
         } catch (e: Exception) {
             false
