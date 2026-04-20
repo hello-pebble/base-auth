@@ -1,1 +1,4 @@
-rootProject.name = "basic-auth"
+rootProject.name = "base-auth"
+
+include("auth-module")
+include("matching-module")
