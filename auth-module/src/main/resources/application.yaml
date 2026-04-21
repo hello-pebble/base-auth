@@ -2,40 +2,42 @@ spring:
   application:
     name: basic-auth
   datasource:
-    # Supabase Transaction Pooler (포트 6543) 사용 및 파라미터 보강
+    # Supabase Transaction Pooler
     url: ${DB_URL}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
-  # data:
-  #   redis:
-  #     host: ${REDIS_HOST:localhost}
-  #     port: ${REDIS_PORT:6379}
+    # HikariCP 설정 보강 (연결 개수 제한)
+    hikari:
+      maximum-pool-size: 3 # 최대 커넥션 개수를 3개로 제한 (Supabase 15개 제한 대응)
+      minimum-idle: 1
+      idle-timeout: 30000
+      max-lifetime: 1800000
+      connection-timeout: 20000
+
   jpa:
     database: postgresql
     generate-ddl: true
     show-sql: true
     hibernate:
-      ddl-auto: update
+      ddl-auto: update # 처음 실행 시 테이블 생성을 위해 유지
     properties:
       hibernate:
         format_sql: true
-        # Dialect를 명시적으로 설정하여 메타데이터 조회 실패를 방지
         dialect: org.hibernate.dialect.PostgreSQLDialect
         jdbc:
           lob:
             non_contextual_creation: true
-  security:
-    oauth2:
-      client:
-        registration:
-          google:
-            client-id: ${GOOGLE_CLIENT_ID}
-            client-secret: ${GOOGLE_CLIENT_SECRET}
-            scope:
-              - email
-              - profile
-
+#  security:
+#    oauth2:
+#      client:
+#        registration:
+#          google:
+#            client-id: ${GOOGLE_CLIENT_ID}
+#            client-secret: ${GOOGLE_CLIENT_SECRET}
+#            scope:
+#              - email
+#              - profile
 jwt:
   secret: ${JWT_SECRET}
   access-expiration: 900000
