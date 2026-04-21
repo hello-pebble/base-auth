@@ -2,9 +2,9 @@ spring:
   application:
     name: basic-auth
   datasource:
-    url: jdbc:postgresql://localhost:5432/authdb
-    username: auth
-    password: auth
+    url: jdbc:postgresql://db.dccrpwphbvgfbzbsvqls.supabase.co:5432/postgres
+    username: postgres
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
   data:
     redis:
