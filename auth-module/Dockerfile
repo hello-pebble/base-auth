@@ -1,13 +1,10 @@
 FROM eclipse-temurin:21-jdk-jammy AS build
 WORKDIR /app
 
-COPY gradlew ./
-COPY gradle ./gradle
-COPY settings.gradle.kts build.gradle.kts ./
-COPY auth-module ./auth-module
+COPY . .
 
 RUN chmod +x ./gradlew
-RUN ./gradlew :auth-module:bootJar --no-daemon --stacktrace --info
+RUN ./gradlew :auth-module:bootJar --no-daemon
 
 FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
