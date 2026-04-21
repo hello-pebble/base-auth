@@ -5,8 +5,6 @@ HELP.md
 /docs/report/**
 /docs/skills/**
 /docs/plans/**
-gradlew
-gradlew.bat
 
 # Logs
 *.log
