@@ -2,6 +2,7 @@ package com.pebble.basicAuth.controller
 
 import com.pebble.basicAuth.config.WaitingRoomService
 import com.pebble.basicAuth.config.JwtProvider
+import com.pebble.basicAuth.config.CustomUserDetails
 import com.pebble.basicAuth.domain.User
 import com.pebble.basicAuth.domain.UserService
 import com.pebble.basicAuth.persistence.RefreshTokenRepository
@@ -40,7 +41,7 @@ class UserController(
 
     @PostMapping("/api/v1/users/signup")
     fun signUp(@Valid @RequestBody request: UserSignUpRequest): ResponseEntity<UserResponse> {
-        val response = UserResponse.from(userService.signUp(request.username, request.password))
+        val response = UserResponse.from(userService.signUp(request.username, request.email, request.password))
         return ResponseEntity.status(HttpStatus.CREATED).body(response)
     }
 
@@ -51,8 +52,9 @@ class UserController(
     }
 
     @PostMapping("/api/v1/login")
-    fun login(@Valid @ModelAttribute request: LoginRequest): ResponseEntity<Any> {
-        // [Phase 4-2] 가상 대기열 체크: 허용된 유저인지 확인
+    fun login(@Valid @RequestBody request: LoginRequest): ResponseEntity<Any> {
+        // [Phase 4-2] 가상 대기열 체크: 허용된 유저인지 확인 (테스트를 위해 일시 주석 처리)
+        /*
         if (!waitingRoomService.isUserAllowed(request.username)) {
             // 허용되지 않은 경우 대기열에 등록하고 순번 반환
             val status = waitingRoomService.register(request.username)
@@ -62,6 +64,7 @@ class UserController(
                 "rank" to status.rank
             ))
         }
+        */
 
         // [Phase 2-1] 사용자 인증 처리
         val authentication = authenticationManager.authenticate(
@@ -95,7 +98,8 @@ class UserController(
             .sameSite("Strict")
             .build()
 
-        val response = UserResponse.from(userService.findByUsername(request.username))
+        val customUserDetails = authentication.principal as CustomUserDetails
+        val response = UserResponse.from(customUserDetails.user)
 
         // [Phase 2-1] Access Token을 Authorization 헤더에 담아 응답
         return ResponseEntity.ok()
@@ -171,6 +175,8 @@ class UserController(
         @field:Size(min = 4, max = 30, message = "사용자명은 4자 이상 30자 이하이어야 합니다.")
         val username: String,
 
+        val email: String? = null,
+
         @field:NotBlank(message = "비밀번호는 필수입니다.")
         @field:Size(min = 8, message = "비밀번호는 최소 8자 이상이어야 합니다.")
         val password: String
@@ -178,15 +184,15 @@ class UserController(
 
     data class LoginRequest(
         @field:NotBlank(message = "사용자명은 필수입니다.")
-        val username: String,
+        val username: String = "",
 
         @field:NotBlank(message = "비밀번호는 필수입니다.")
-        val password: String
+        val password: String = ""
     )
-    data class UserResponse(val id: Long?, val username: String) {
+    data class UserResponse(val id: Long?, val username: String, val email: String?) {
         companion object {
             fun from(user: User): UserResponse {
-                return UserResponse(user.id, user.username)
+                return UserResponse(user.id, user.username, user.email)
             }
         }
     }

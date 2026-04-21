@@ -23,6 +23,9 @@ class UserEntity(
     @Column(nullable = false, unique = true, length = 30)
     var username: String,
 
+    @Column(unique = true, length = 100)
+    var email: String? = null,
+
     @Column(length = 255)
     var password: String? = null,
 
@@ -47,8 +50,8 @@ class UserEntity(
     lateinit var updatedAt: LocalDateTime
 
     // Secondary constructor to match Java's constructor
-    constructor(username: String, password: String?, provider: String?, providerId: String?, role: UserRole?) : 
-        this(null, username, password, provider, providerId, role ?: UserRole.ROLE_USER, null)
+    constructor(username: String, email: String?, password: String?, provider: String?, providerId: String?, role: UserRole?) : 
+        this(null, username, email, password, provider, providerId, role ?: UserRole.ROLE_USER, null)
 
     companion object {
         @JvmStatic
@@ -56,6 +59,7 @@ class UserEntity(
             return UserEntity(
                 id = user.id,
                 username = user.username,
+                email = user.email,
                 password = user.password,
                 provider = user.provider,
                 providerId = user.providerId,
@@ -69,6 +73,7 @@ class UserEntity(
         return User(
             id = this.id,
             username = this.username,
+            email = this.email,
             password = this.password,
             provider = this.provider,
             providerId = this.providerId,

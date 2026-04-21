@@ -16,14 +16,9 @@ class CustomUserDetailsService(
     @Throws(UsernameNotFoundException::class)
     override fun loadUserByUsername(username: String): UserDetails {
         val user = userRepository.findByUsernameAndDeletedAtIsNull(username)
-            .orElseThrow { UsernameNotFoundException("?�용?��? 찾을 ???�습?�다: $username") }
+            .orElseThrow { UsernameNotFoundException("사용자를 찾을 수 없습니다: $username") }
 
-        val authority = SimpleGrantedAuthority(user.role.name)
-
-        return SecurityUser(
-            user.username,
-            user.password ?: "",
-            listOf(authority)
-        )
+        return CustomUserDetails(user)
     }
+
 }

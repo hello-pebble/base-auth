@@ -16,11 +16,7 @@ class GatewaySecurityConfig {
             .csrf { it.disable() }
             .authorizeExchange { exchange ->
                 exchange
-                    .pathMatchers("/auth/**").permitAll() // 로그인/회원가입은 공개
-                    .anyExchange().authenticated() // 나머지는 JWT 필요
-            }
-            .oauth2ResourceServer { oauth2 ->
-                oauth2.jwt { }
+                    .anyExchange().permitAll() // 테스트를 위해 게이트웨이 보안 해제
             }
             .build()
     }

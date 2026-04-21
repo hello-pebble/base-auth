@@ -17,6 +17,15 @@ class UserRepositoryImpl(private val userJpaRepository: UserJpaRepository) : Use
             .map { it.toDomain() }
     }
 
+    override fun findByEmailAndDeletedAtIsNull(email: String): Optional<User> {
+        return userJpaRepository.findByEmailAndDeletedAtIsNull(email)
+            .map { it.toDomain() }
+    }
+
+    override fun existsByEmailAndDeletedAtIsNull(email: String): Boolean {
+        return userJpaRepository.existsByEmailAndDeletedAtIsNull(email)
+    }
+
     override fun findByProviderAndProviderIdAndDeletedAtIsNull(provider: String, providerId: String): Optional<User> {
         return userJpaRepository.findByProviderAndProviderIdAndDeletedAtIsNull(provider, providerId)
             .map { it.toDomain() }

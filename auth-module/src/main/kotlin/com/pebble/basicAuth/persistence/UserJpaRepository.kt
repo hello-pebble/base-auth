@@ -9,6 +9,10 @@ interface UserJpaRepository : JpaRepository<UserEntity, Long> {
 
     fun findByUsernameAndDeletedAtIsNull(username: String): Optional<UserEntity>
 
+    fun findByEmailAndDeletedAtIsNull(email: String): Optional<UserEntity>
+
+    fun existsByEmailAndDeletedAtIsNull(email: String): Boolean
+
     fun findByProviderAndProviderIdAndDeletedAtIsNull(provider: String, providerId: String): Optional<UserEntity>
 
 }

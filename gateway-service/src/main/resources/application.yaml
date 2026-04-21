@@ -17,6 +17,10 @@ spring:
           uri: http://localhost:8081
           predicates:
             - Path=/api/matching/**
+        - id: task-route
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/tasks/**, /api/dates/**
   security:
     oauth2:
       resourceserver:

@@ -8,6 +8,10 @@ interface UserRepository {
 
     fun findByUsernameAndDeletedAtIsNull(username: String): Optional<User>
 
+    fun findByEmailAndDeletedAtIsNull(email: String): Optional<User>
+
+    fun existsByEmailAndDeletedAtIsNull(email: String): Boolean
+
     fun findByProviderAndProviderIdAndDeletedAtIsNull(provider: String, providerId: String): Optional<User>
 
     fun findById(id: Long): Optional<User>

@@ -12,14 +12,27 @@ class UserService(
 ) {
 
     @Transactional
-    fun signUp(username: String, password: String): User {
+    fun signUp(username: String, email: String?, password: String): User {
         if (userRepository.existsByUsernameAndDeletedAtIsNull(username)) {
             throw UserException("이미 존재하는 사용자명입니다.")
+        }
+        
+        if (email != null && userRepository.existsByEmailAndDeletedAtIsNull(email)) {
+            throw UserException("이미 사용 중인 이메일입니다.")
         }
 
         val encodedPassword = passwordEncoder.encode(password)
 
-        return userRepository.save(User(username, encodedPassword, UserRole.ROLE_USER))
+        return userRepository.save(User(
+            id = null,
+            username = username,
+            email = email,
+            password = encodedPassword,
+            provider = null,
+            providerId = null,
+            role = UserRole.ROLE_USER,
+            deletedAt = null
+        ))
     }
 
     @Transactional(readOnly = true)
@@ -36,14 +49,19 @@ class UserService(
         return userRepository.findByProviderAndProviderIdAndDeletedAtIsNull(provider, providerId)
             .map { it } // 필요한 경우 정보 업데이트 로직 추가
             .orElseGet {
-                val baseUsername = email?.takeIf { it.isNotEmpty() } ?: "${provider}_$providerId"
+                val baseUsername = email?.split("@")?.get(0) ?: "${provider}_$providerId"
                 val username = if (userRepository.existsByUsernameAndDeletedAtIsNull(baseUsername)) {
                     "${baseUsername}_${UUID.randomUUID().toString().take(5)}"
                 } else {
                     baseUsername
                 }
 
-                userRepository.save(User.createSocialUser(username, provider, providerId))
+                userRepository.save(User.createSocialUser(
+                    username = username,
+                    email = email ?: "",
+                    provider = provider,
+                    providerId = providerId
+                ))
             }
     }
 }
