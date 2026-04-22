@@ -1,5 +1,5 @@
 server:
-  port: ${PORT:8000}
+  port: ${PORT}
   address: 0.0.0.0
 
 spring:
@@ -23,20 +23,19 @@ spring:
 
       routes:
         # 1. PUBLIC: Auth Service (Login, Signup, Landing Page)
-        # 중요: Render 환경 변수 AUTH_SERVICE_URL이 누락되면 localhost로 시도하여 실패합니다.
         - id: public-access-route
-          uri: ${AUTH_SERVICE_URL:http://localhost:8080}
+          uri: ${AUTH_SERVICE_URL}
           predicates:
             - Path=/, /index.html, /static/**, /css/**, /js/**, /favicon.ico, /api/v1/login, /api/v1/users/signup, /api/v1/refresh, /api/v1/waiting-room/**
 
         # 2. PRIVATE: Matching Service
         - id: private-matching-route
-          uri: ${MATCHING_SERVICE_URL:http://localhost:8081}
+          uri: ${MATCHING_SERVICE_URL}
           predicates:
             - Path=/api/v1/matching/**
 
         # 3. PRIVATE: Task Service
         - id: private-task-route
-          uri: ${TASK_SERVICE_URL:http://localhost:8082}
+          uri: ${TASK_SERVICE_URL}
           predicates:
             - Path=/api/v1/tasks/**, /api/v1/dates/**
