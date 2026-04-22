@@ -23,9 +23,8 @@ subprojects {
     apply(plugin = "io.spring.dependency-management")
 
     java {
-        toolchain {
-            languageVersion = JavaLanguageVersion.of(21)
-        }
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
 
     // subprojects 내에서는 이 방식으로 코틀린 옵션을 설정합니다.
