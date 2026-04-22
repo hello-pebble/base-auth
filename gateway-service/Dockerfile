@@ -1,12 +1,16 @@
-# Build Stage
-FROM eclipse-temurin:21-jdk-jammy AS build
-WORKDIR /app
-COPY . .
-RUN ./gradlew :gateway-service:bootJar --no-daemon
-
-# Run Stage
+# Render Deployment Dockerfile for Gateway Service
+# Pre-requisite: Run './gradlew :gateway-service:bootJar' locally before building the image
 FROM eclipse-temurin:21-jre-jammy
+
 WORKDIR /app
-COPY --from=build /app/gateway-service/build/libs/*.jar app.jar
+
+# Copy the pre-built JAR from the build/libs directory
+# Ensure the JAR name matches your project version (e.g., 0.0.1-SNAPSHOT)
+COPY build/libs/*.jar app.jar
+
+# Expose the internal port (Render will map this to the public internet)
 EXPOSE 8000
-ENTRYPOINT ["java", "-Dspring.profiles.active=prod", "-jar", "app.jar"]
+
+# Run the application with production profile
+# -Dserver.port=${PORT:8000} ensures it listens on Render's dynamic port
+ENTRYPOINT ["java", "-Dserver.port=${PORT:8000}", "-Dspring.profiles.active=prod", "-jar", "app.jar"]
