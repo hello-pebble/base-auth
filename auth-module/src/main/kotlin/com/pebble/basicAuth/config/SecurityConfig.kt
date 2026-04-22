@@ -34,7 +34,9 @@ class SecurityConfig(
             }
 
             .authorizeHttpRequests { auth ->
-                auth.requestMatchers("/api/v1/users/signup", "/api/v1/login", "/api/v1/refresh").permitAll()
+                auth.requestMatchers("/", "/index.html", "/static/**", "/css/**", "/js/**", "/favicon.ico").permitAll()
+                    .requestMatchers("/api/v1/users/signup", "/api/v1/login", "/api/v1/refresh").permitAll()
+                    .requestMatchers("/api/v1/waiting-room/**").permitAll()
                     .requestMatchers("/h2-console/**").permitAll()
                     .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                     .anyRequest().authenticated()
