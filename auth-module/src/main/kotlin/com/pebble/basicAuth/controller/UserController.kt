@@ -118,25 +118,6 @@ class UserController(
             .build()
     }
 
-    @PostMapping("/api/v1/waiting-room/enter")
-    fun enterService(
-        authentication: Authentication,
-        @RequestParam serviceId: String
-    ): ResponseEntity<WaitingRoomService.WaitingStatus> {
-        val status = waitingRoomService.register(authentication.name, serviceId)
-        return ResponseEntity.ok(status)
-    }
-
-    @GetMapping("/api/v1/waiting-room/status")
-    fun checkStatus(
-        @RequestParam userId: String,
-        @RequestParam serviceId: String
-    ): ResponseEntity<WaitingRoomService.WaitingStatus> {
-        val isAllowed = waitingRoomService.isUserAllowed(userId, serviceId)
-        val status = if (isAllowed) "ALLOWED" else "WAITING"
-        return ResponseEntity.ok(WaitingRoomService.WaitingStatus(status, 0))
-    }
-
     @GetMapping("/api/v1/users/me")
     fun me(authentication: Authentication): ResponseEntity<UserResponse> {
         val response = UserResponse.from(userService.findByUsername(authentication.name))
