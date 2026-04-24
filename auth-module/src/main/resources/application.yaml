@@ -8,9 +8,9 @@ server:
   forward-headers-strategy: framework
 
 datasource:
-  url: ${DB_URL:jdbc:postgresql://localhost:5432/authdb}
-  username: ${DB_USERNAME:auth}
-  password: ${DB_PASSWORD:auth}
+  url: ${DB_URL}
+  username: ${DB_USERNAME}
+  password: ${DB_PASSWORD}
   driver-class-name: org.postgresql.Driver
 
 h2:
@@ -29,8 +29,8 @@ security:
     client:
       registration:
         google:
-          client-id: ${GOOGLE_CLIENT_ID:dummy}
-          client-secret: ${GOOGLE_CLIENT_SECRET:dummy}
+          client-id: ${GOOGLE_CLIENT_ID}
+          client-secret: ${GOOGLE_CLIENT_SECRET}
           scope:
             - email
             - profile
@@ -45,10 +45,10 @@ management:
       show-details: always
 
 jwt:
-  secret: ${JWT_SECRET:vmgS06Dx8p5t8S6v8O0p6S8v8O0p6S8v8O0p6S8v8O0p}
+  secret: ${JWT_SECRET}
   access-expiration: 900000
   refresh-expiration: 604800000
 
 auth:
-  gateway-url: ${GATEWAY_URL:http://localhost:8000}
-  redirect-path: ${REDIRECT_PATH:/me}
+  gateway-url: ${GATEWAY_URL}
+  redirect-path: ${REDIRECT_PATH}
