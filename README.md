@@ -6,7 +6,7 @@ graph LR
     Step2(<b>Phase 2. 엔진 구축</b><br/>Auth Server 구현<br/>보안 프로토콜 적용)
     Step3(<b>Phase 3. 통합</b><br/>SSO 통합 검증<br/>관리자 반복로그인 제거)
     Step3.5(<b>Phase 3.5. 운영 최적화</b><br/>임계치 도달<br/>인증 안정성 확보)
-    Step4(<b>Phase 4. 비즈니스 확장</b><br/>신규 서비스 즉시 연결<br/>플랫폼 생태계 완성)
+    Step4(<b>Phase 4. 비즈니스 확장</b><br/>MSA 대시보드 구축<br/>Sec 7.0 마이그레이션)
 
     %% 흐름 연결
     Step1 --> Step2
@@ -18,8 +18,8 @@ graph LR
     style Step1 fill:#ffffff,color:#000000,stroke:#455a64,stroke-width:2px
     style Step2 fill:#ffffff,color:#000000,stroke:#455a64,stroke-width:2px
     style Step3 fill:#ffffff,color:#000000,stroke:#455a64,stroke-width:2px
-    style Step3.5 fill:#ffffff,color:#000000,stroke:#f57c00,stroke-width:2px
-    style Step4 fill:#ffffff,color:#000000,stroke:#455a64,stroke-width:2px
+    style Step3.5 fill:#ffffff,color:#000000,stroke:#455a64,stroke-width:2px
+    style Step4 fill:#ffffff,color:#000000,stroke:#f57c00,stroke-width:2px
 
     %% 하단 주석 대신 방향성 표시
     classDef default font-family:Arial,font-size:13px;
@@ -31,7 +31,31 @@ graph LR
     click Step3.5 "./docs/phase/phase3_5.md"
     click Step4 "./docs/phase/phase4.md"
 ```
-https://api-gateway-m46j.onrender.com
+---
+
+### 🌐 통합 포털 아키텍처
+```mermaid
+graph TD
+    User((User)) --> Gateway[<b>Smart Gateway</b><br/>Central Hub & Routing]
+    
+    subgraph Portal [MSA Hub Dashboard]
+        Gateway --> Hub[Portal Home /]
+    end
+
+    subgraph Services [Back-end Ecosystem]
+        Gateway -->|Public| Preview[Preview Service<br/>Port 8084]
+        Gateway -->|Private| Auth[Auth Server<br/>Port 8080]
+        Gateway -->|Private| Task[Task Service<br/>Port 8083]
+        Gateway -->|Private| Match[Matching Service<br/>Port 8081]
+    end
+
+    Auth -.->|JWK Set| Task
+    Auth -.->|JWK Set| Match
+    
+    style Gateway fill:#f9f,stroke:#333,stroke-width:4px
+    style Hub fill:#e1f5fe,stroke:#01579b
+    style Auth fill:#fff9c4,stroke:#fbc02d
+```
 
 ---
 ### 🧾 프로젝트 목표
@@ -59,16 +83,16 @@ graph LR
 %% 3. 최종 지향점 (Target)
     subgraph Target [Target: 통합 인증 생태계]
         direction TB
-        Auth[<b>통합 인증 서버</b>]
+        AuthS[<b>통합 인증 서버</b>]
         AppA[서비스 A]
         AppB[서비스 B]
         AppC{{<b>신규 서비스 C</b>}}
 
-        Auth --- AppA
-        Auth --- AppB
-        Auth --- AppC
+        AuthS --- AppA
+        AuthS --- AppB
+        AuthS --- AppC
 
-        Admin2((관리자)) ==>|Single Sign-On| Auth
+        Admin2((관리자)) ==>|Single Sign-On| AuthS
     end
 
 %% 연결선
@@ -79,7 +103,7 @@ graph LR
     style S1 fill:#333,color:#fff,stroke:#000
     style S2 fill:#333,color:#fff,stroke:#000
     style S3 fill:#333,color:#fff,stroke:#000
-    style Auth fill:#333,stroke:#333,stroke:#000,stroke-width:2px
+    style AuthS fill:#333,stroke:#333,stroke:#000,stroke-width:2px
     style Target fill:#333,color:#fff,stroke:#fff,stroke-dasharray: 5 5
 ```
 ---
@@ -90,15 +114,19 @@ graph LR
 ---
 ### 📑 Core Documentation
 상세 내역은 아래 문서들을 참고하세요.
+*   **[SECURITY_UPGRADE_REPORT.md](./docs/auth/SECURITY_UPGRADE_REPORT.md)**: Spring Security 7.0 마이그레이션 및 AI 기반 분석 리포트.
 *   **[PROJECT_MANIFESTO.md](./docs/PROJECT_MANIFESTO.md)**: 전체 프로젝트의 존재 이유와 검증 시나리오.
 *   **[TRAFFIC_CONTROL_STRATEGY.md](./docs/TRAFFIC_CONTROL_STRATEGY.md)**: Phase 4의 핵심 전략인 '차단과 대기'의 상세 설계.
 *   **[DECISION_LOG_WHY.md](./docs/DECISION_LOG_WHY.md)**: 기술 선택 시의 고민과 트레이드오프 기록.
 *   **[PHASE 4 Architecture](./docs/architecture/phase4_architecture.md)**: 스마트 게이트웨이의 데이터 흐름도.
 ---
 ### 🛠️ Tech Stack
-- **Language**: Kotlin 1.9 (Target JVM 21)
-- **Framework**: Spring Boot 3.4
-- **Security**: Spring Security (OAuth2, JWT)
-- **Database**: PostgreSQL (Persistence), Redis (Token/Queue Management)
+- **Language**: Kotlin 2.2 / Java 21
+- **Framework**: Spring Boot 4.0 (Latest Bleeding Edge)
+- **Security**: **Spring Security 7.0** (OAuth2 Authorization Server, OIDC)
+- **Architecture**: MSA (Gateway, Auth, Task, Matching, Preview)
+- **Database**: PostgreSQL / H2 (Development)
 - **Testing**: JUnit 5, Mockito-Kotlin
 
+---
+**Main Entrance**: [http://localhost:8000/](http://localhost:8000/) (Gateway Portal)
